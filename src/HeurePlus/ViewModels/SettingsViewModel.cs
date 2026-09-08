@@ -21,6 +21,10 @@ public sealed class SettingsViewModel : ObservableObject
     private readonly ActivityLogRepository _activityLog;
     private readonly AppEvents _events;
     private readonly AppDatabase _db;
+    private readonly ProfileStore _profiles;
+    private readonly Profile _currentProfile;
+    private readonly Action _switchProfile;
+    private readonly Func<ProfileEditViewModel, bool?> _showProfileEdit;
     private readonly UpdateService _update = new();
 
     private AppSettings _app;
@@ -33,7 +37,11 @@ public sealed class SettingsViewModel : ObservableObject
         DayEntryRepository entries,
         ActivityLogRepository activityLog,
         AppEvents events,
-        AppDatabase db)
+        AppDatabase db,
+        ProfileStore profiles,
+        Profile currentProfile,
+        Action switchProfile,
+        Func<ProfileEditViewModel, bool?> showProfileEdit)
     {
         _settingsRepo = settingsRepo;
         _backup = backup;
@@ -43,6 +51,10 @@ public sealed class SettingsViewModel : ObservableObject
         _activityLog = activityLog;
         _events = events;
         _db = db;
+        _profiles = profiles;
+        _currentProfile = currentProfile;
+        _switchProfile = switchProfile;
+        _showProfileEdit = showProfileEdit;
 
         _app = _settingsRepo.LoadApp();
         _isDark = _app.Theme == AppTheme.Dark;
@@ -66,6 +78,29 @@ public sealed class SettingsViewModel : ObservableObject
     public RelayCommand OpenDbFolderCommand { get; }
     public RelayCommand ExportPdfCommand { get; }
     public RelayCommand ExportExcelCommand { get; }
+
+    // ---------- Profil ----------
+
+    public string ProfileName => _currentProfile.Name;
+    public string ProfileUsername => _currentProfile.Username;
+
+    public bool RememberOnThisDevice
+    {
+        get => _profiles.RememberedProfileId == _currentProfile.Id;
+        set
+        {
+            _profiles.RememberedProfileId = value ? _currentProfile.Id : null;
+            OnPropertyChanged();
+        }
+    }
+
+    public RelayCommand SwitchProfileCommand => new(_ => _switchProfile());
+
+    public RelayCommand EditMyProfileCommand => new(_ =>
+    {
+        _showProfileEdit(new ProfileEditViewModel(_profiles, ProfileEditMode.Edit, _currentProfile));
+        RaiseAll();
+    });
 
     // ---------- Apparence ----------
 

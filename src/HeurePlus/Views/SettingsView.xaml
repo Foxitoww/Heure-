@@ -16,8 +16,36 @@
                     <TextBlock Text="Apparence, sauvegarde des données et exports." Style="{StaticResource PageSubtitle}" />
                 </StackPanel>
 
-                <!-- Apparence -->
+                <!-- Profil -->
                 <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Profil" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="{Binding ProfileName}" Style="{StaticResource BodyStrong}" />
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,2,0,0">
+                            <Run Text="Identifiant : " />
+                            <Run Text="{Binding ProfileUsername, Mode=OneWay}" />
+                        </TextBlock>
+
+                        <Grid Margin="0,12,0,2">
+                            <TextBlock Text="Rester connecté sur cet appareil" Style="{StaticResource BodyStrong}"
+                                       VerticalAlignment="Center" />
+                            <ToggleButton Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                          IsChecked="{Binding RememberOnThisDevice}" />
+                        </Grid>
+
+                        <Border Style="{StaticResource Divider}" />
+
+                        <StackPanel Orientation="Horizontal">
+                            <Button Style="{StaticResource AccentButton}" Content="Changer de profil"
+                                    Command="{Binding SwitchProfileCommand}" />
+                            <Button Style="{StaticResource GhostButton}" Content="Modifier mon profil" Margin="10,0,0,0"
+                                    Command="{Binding EditMyProfileCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Apparence -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                     <StackPanel>
                         <TextBlock Text="Apparence" Style="{StaticResource SectionTitle}" />
 

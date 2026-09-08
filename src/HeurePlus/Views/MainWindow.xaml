@@ -35,6 +35,22 @@
                     </StackPanel>
                 </StackPanel>
 
+                <!-- Profil actif -->
+                <Button DockPanel.Dock="Top" Style="{StaticResource SubtleButton}" Margin="14,0,14,10"
+                        HorizontalContentAlignment="Left" Command="{Binding SwitchProfileCommand}" ToolTip="Changer de profil">
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="28" Height="28" CornerRadius="14"
+                                Background="{Binding ProfileColorHex, Converter={StaticResource HexToBrush}}">
+                            <TextBlock Text="{Binding ProfileInitial}" Foreground="White" FontWeight="SemiBold"
+                                       FontSize="13" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding ProfileName}" FontSize="13" FontWeight="SemiBold" />
+                            <TextBlock Text="Changer de profil" FontSize="10" Foreground="{DynamicResource Brush.TextTertiary}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
+
                 <!-- Pied : bascule de thème -->
                 <Border DockPanel.Dock="Bottom" Margin="14,10,14,16">
                     <Grid>
