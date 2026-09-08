@@ -7,99 +7,105 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:SettingsViewModel}">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="20" MaxWidth="780" HorizontalAlignment="Left">
+    <Grid Style="{StaticResource PageRoot}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0">
+            <StackPanel Margin="32,26,32,32" MaxWidth="820" HorizontalAlignment="Left">
 
-            <TextBlock Text="Réglages" Style="{StaticResource PageTitle}" Margin="0,0,0,16" />
+                <StackPanel Margin="0,0,0,20">
+                    <TextBlock Text="Réglages" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Apparence, sauvegarde des données et exports." Style="{StaticResource PageSubtitle}" />
+                </StackPanel>
 
-            <!-- ======= Apparence ======= -->
-            <Border Style="{StaticResource Card}">
-                <StackPanel>
-                    <TextBlock Text="Apparence" Style="{StaticResource SectionTitle}" />
+                <!-- Apparence -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Apparence" Style="{StaticResource SectionTitle}" />
 
-                    <Grid Margin="0,4">
-                        <StackPanel>
-                            <TextBlock Text="Thème sombre" FontWeight="SemiBold" />
-                            <TextBlock Text="Bascule entre le thème clair et le thème sombre." Style="{StaticResource Muted}" />
+                        <Grid Margin="0,2">
+                            <StackPanel>
+                                <TextBlock Text="Thème sombre" Style="{StaticResource BodyStrong}" />
+                                <TextBlock Text="Bascule entre le thème clair et le thème sombre." Style="{StaticResource Caption}" Margin="0,2,0,0" />
+                            </StackPanel>
+                            <ToggleButton Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                          IsChecked="{Binding IsDark}" />
+                        </Grid>
+
+                        <Border Style="{StaticResource Divider}" />
+
+                        <TextBlock Text="Premier jour de la semaine" Style="{StaticResource BodyStrong}" Margin="0,0,0,4" />
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton Content="Lundi" GroupName="WeekStart" Margin="0,0,24,0"
+                                         IsChecked="{Binding WeekStartsMonday}" />
+                            <RadioButton Content="Dimanche" GroupName="WeekStart"
+                                         IsChecked="{Binding WeekStartsMonday, Converter={StaticResource InvBool}}" />
                         </StackPanel>
-                        <ToggleButton Style="{StaticResource ToggleSwitch}" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                      IsChecked="{Binding IsDark}" />
-                    </Grid>
 
-                    <Rectangle Height="1" Fill="{DynamicResource Brush.Border}" Margin="0,12" />
+                        <Border Style="{StaticResource Divider}" />
 
-                    <TextBlock Text="Premier jour de la semaine" FontWeight="SemiBold" />
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <RadioButton Content="Lundi" GroupName="WeekStart" Margin="0,0,18,0"
-                                     IsChecked="{Binding WeekStartsMonday}" />
-                        <RadioButton Content="Dimanche" GroupName="WeekStart"
-                                     IsChecked="{Binding WeekStartsMonday, Converter={StaticResource InvBool}}" />
+                        <TextBlock Text="Devise" Style="{StaticResource BodyStrong}" Margin="0,0,0,6" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox Text="{Binding Currency}" Width="120" />
+                            <Button Style="{StaticResource GhostButton}" Content="Enregistrer" Margin="10,0,0,0"
+                                    Command="{Binding SaveCurrencyCommand}" />
+                        </StackPanel>
                     </StackPanel>
+                </Border>
 
-                    <Rectangle Height="1" Fill="{DynamicResource Brush.Border}" Margin="0,12" />
+                <!-- Sauvegarde -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Sauvegarde" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                   Text="Toutes les données sont stockées localement dans un fichier SQLite. Aucune connexion Internet n'est utilisée." />
 
-                    <TextBlock Text="Devise" FontWeight="SemiBold" />
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                        <TextBox Text="{Binding Currency}" Width="120" />
-                        <Button Style="{StaticResource GhostButton}" Content="Enregistrer" Margin="10,0,0,0"
-                                Command="{Binding SaveCurrencyCommand}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <Button Style="{StaticResource AccentButton}" Content="Sauvegarder maintenant"
+                                    Command="{Binding BackupNowCommand}" />
+                            <Button Style="{StaticResource GhostButton}" Content="Restaurer une sauvegarde" Margin="10,0,0,0"
+                                    Command="{Binding RestoreCommand}" />
+                            <Button Style="{StaticResource SubtleButton}" Content="Ouvrir le dossier" Margin="6,0,0,0"
+                                    Command="{Binding OpenDbFolderCommand}" />
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding LastBackupText}" Style="{StaticResource Caption}" Margin="0,12,0,0" TextWrapping="Wrap" />
                     </StackPanel>
-                </StackPanel>
-            </Border>
+                </Border>
 
-            <!-- ======= Sauvegarde ======= -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                <StackPanel>
-                    <TextBlock Text="Sauvegarde" Style="{StaticResource SectionTitle}" />
-                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap"
-                               Text="Toutes les données sont stockées localement dans un fichier SQLite. Aucune connexion Internet n'est utilisée." />
+                <!-- Export -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Export" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="MOIS À EXPORTER" Style="{StaticResource FieldLabel}" />
+                        <DatePicker SelectedDate="{Binding ExportMonth}" Width="200" HorizontalAlignment="Left" />
 
-                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                        <Button Style="{StaticResource AccentButton}" Content="Sauvegarder maintenant"
-                                Command="{Binding BackupNowCommand}" />
-                        <Button Style="{StaticResource GhostButton}" Content="Restaurer une sauvegarde" Margin="10,0,0,0"
-                                Command="{Binding RestoreCommand}" />
-                        <Button Style="{StaticResource GhostButton}" Content="Ouvrir le dossier de données" Margin="10,0,0,0"
-                                Command="{Binding OpenDbFolderCommand}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                            <Button Style="{StaticResource AccentButton}" Content="Exporter en PDF" Command="{Binding ExportPdfCommand}" />
+                            <Button Style="{StaticResource GhostButton}" Content="Exporter en Excel" Margin="10,0,0,0"
+                                    Command="{Binding ExportExcelCommand}" />
+                        </StackPanel>
                     </StackPanel>
+                </Border>
 
-                    <TextBlock Text="{Binding LastBackupText}" Style="{StaticResource Muted}" Margin="0,10,0,0" TextWrapping="Wrap" />
-                </StackPanel>
-            </Border>
-
-            <!-- ======= Export ======= -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                <StackPanel>
-                    <TextBlock Text="Export" Style="{StaticResource SectionTitle}" />
-                    <TextBlock Text="Mois à exporter" Style="{StaticResource KpiLabel}" />
-                    <DatePicker SelectedDate="{Binding ExportMonth}" Width="180" HorizontalAlignment="Left" Margin="0,2,0,0" />
-
-                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                        <Button Style="{StaticResource AccentButton}" Content="Exporter en PDF" Command="{Binding ExportPdfCommand}" />
-                        <Button Style="{StaticResource GhostButton}" Content="Exporter en Excel" Margin="10,0,0,0"
-                                Command="{Binding ExportExcelCommand}" />
+                <!-- À propos -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock Text="À propos" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Text="Heure+ — calendrier pour travailleurs intérimaires" Style="{StaticResource BodyStrong}" />
+                        <TextBlock Text="{Binding VersionText}" Style="{StaticResource Caption}" Margin="0,3,0,0" />
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,10,0,0" TextWrapping="Wrap">
+                            <Run Text="Base de données : " />
+                            <Run Text="{Binding DbPath, Mode=OneWay}" />
+                        </TextBlock>
                     </StackPanel>
-                </StackPanel>
-            </Border>
+                </Border>
 
-            <!-- ======= À propos ======= -->
-            <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                <StackPanel>
-                    <TextBlock Text="À propos" Style="{StaticResource SectionTitle}" />
-                    <TextBlock Text="Heure+ — calendrier pour travailleurs intérimaires" FontWeight="SemiBold" />
-                    <TextBlock Text="{Binding VersionText}" Style="{StaticResource Muted}" Margin="0,2,0,0" />
-                    <TextBlock Style="{StaticResource Muted}" Margin="0,8,0,0" TextWrapping="Wrap">
-                        <Run Text="Base de données : " />
-                        <Run Text="{Binding DbPath, Mode=OneWay}" />
-                    </TextBlock>
-                </StackPanel>
-            </Border>
+                <Border Style="{StaticResource CardAccent}" Padding="12,10" Margin="0,16,0,0"
+                        Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVis}}">
+                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap"
+                               Foreground="{DynamicResource Brush.AccentSoftText}" />
+                </Border>
 
-            <Border Margin="0,16,0,0" CornerRadius="8" Padding="10" Background="{DynamicResource Brush.AccentSoft}"
-                    Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVis}}">
-                <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" />
-            </Border>
-
-        </StackPanel>
-    </ScrollViewer>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

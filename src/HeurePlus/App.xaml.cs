@@ -43,6 +43,7 @@ public partial class App : Application
                 DataContext = vm,
                 Owner = Current.MainWindow
             };
+            WindowEffects.Apply(window, theme.Current == Models.AppTheme.Dark);
             return window.ShowDialog();
         };
 
@@ -56,6 +57,11 @@ public partial class App : Application
         var mainWindow = new MainWindow { DataContext = main };
         MainWindow = mainWindow;
         mainWindow.Show();
+
+        // Effets Windows 11 (barre de titre sombre, coins arrondis) + suivi du thème.
+        WindowEffects.Apply(mainWindow, theme.Current == Models.AppTheme.Dark);
+        events.SettingsChanged += () => mainWindow.Dispatcher.Invoke(
+            () => WindowEffects.Apply(mainWindow, theme.Current == Models.AppTheme.Dark));
     }
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

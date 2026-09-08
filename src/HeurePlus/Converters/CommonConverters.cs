@@ -74,6 +74,23 @@ public sealed class StatusToBrushConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>
+/// Index sélectionné -&gt; Visible si égal à ConverterParameter, sinon Collapsed.
+/// Sert à afficher la bonne page selon l'élément actif de la barre de navigation.
+/// </summary>
+public sealed class IndexToVisibilityConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        int current = value is int i ? i : 0;
+        int target = int.TryParse(parameter?.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var t) ? t : -1;
+        return current == target ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
 /// <summary>Multiplie une valeur numérique par ConverterParameter (double).</summary>
 public sealed class MultiplyConverter : IValueConverter
 {

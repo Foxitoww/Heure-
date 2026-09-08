@@ -1,28 +1,64 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- ================= Thème clair ================= -->
+    <!-- Heure+ · Theme CLAIR — inspire Fluent Design / Windows 11.
+         Les memes cles existent dans Dark.xaml. -->
 
-    <Color x:Key="Color.Bg">#FFF4F5FA</Color>
-    <Color x:Key="Color.Surface">#FFFFFFFF</Color>
-    <Color x:Key="Color.SurfaceAlt">#FFEDEFF6</Color>
-    <Color x:Key="Color.Border">#FFE1E4EC</Color>
-    <Color x:Key="Color.Text">#FF1F2430</Color>
-    <Color x:Key="Color.TextMuted">#FF6B7280</Color>
-    <Color x:Key="Color.Accent">#FF6366F1</Color>
-    <Color x:Key="Color.AccentText">#FFFFFFFF</Color>
-    <Color x:Key="Color.Shadow">#33334155</Color>
+    <!-- Surfaces (du plus profond au plus proche) -->
+    <SolidColorBrush x:Key="Brush.Bg"          Color="#F3F3F3" />
+    <SolidColorBrush x:Key="Brush.NavRailBg"   Color="#EDEDED" />
+    <SolidColorBrush x:Key="Brush.Layer"       Color="#F7F7F7" />
+    <SolidColorBrush x:Key="Brush.Surface"     Color="#FFFFFF" />
+    <SolidColorBrush x:Key="Brush.SurfaceAlt"  Color="#F4F4F4" />
+    <SolidColorBrush x:Key="Brush.SurfaceInput" Color="#FDFDFD" />
 
-    <SolidColorBrush x:Key="Brush.Bg" Color="{StaticResource Color.Bg}" />
-    <SolidColorBrush x:Key="Brush.Surface" Color="{StaticResource Color.Surface}" />
-    <SolidColorBrush x:Key="Brush.SurfaceAlt" Color="{StaticResource Color.SurfaceAlt}" />
-    <SolidColorBrush x:Key="Brush.Border" Color="{StaticResource Color.Border}" />
-    <SolidColorBrush x:Key="Brush.Text" Color="{StaticResource Color.Text}" />
-    <SolidColorBrush x:Key="Brush.TextMuted" Color="{StaticResource Color.TextMuted}" />
-    <SolidColorBrush x:Key="Brush.Accent" Color="{StaticResource Color.Accent}" />
-    <SolidColorBrush x:Key="Brush.AccentText" Color="{StaticResource Color.AccentText}" />
-    <SolidColorBrush x:Key="Brush.AccentSoft" Color="#FFE0E1FB" />
-    <SolidColorBrush x:Key="Brush.ChartBar" Color="{StaticResource Color.Accent}" />
-    <SolidColorBrush x:Key="Brush.ChartTrack" Color="#FFE9EBF3" />
+    <!-- Traits -->
+    <SolidColorBrush x:Key="Brush.Border"              Color="#E5E5E5" />
+    <SolidColorBrush x:Key="Brush.CardStroke"          Color="#E7E7E7" />
+    <SolidColorBrush x:Key="Brush.DividerStroke"       Color="#ECECEC" />
+    <SolidColorBrush x:Key="Brush.ControlStroke"       Color="#DFDFDF" />
+    <SolidColorBrush x:Key="Brush.ControlStrokeStrong" Color="#C6C6C6" />
+    <SolidColorBrush x:Key="Brush.FocusStroke"         Color="#1A1A1A" />
+
+    <!-- Texte -->
+    <SolidColorBrush x:Key="Brush.Text"         Color="#1B1B1B" />
+    <SolidColorBrush x:Key="Brush.TextMuted"    Color="#5A5A5A" />
+    <SolidColorBrush x:Key="Brush.TextTertiary" Color="#8A8A8A" />
+    <SolidColorBrush x:Key="Brush.TextDisabled" Color="#ABABAB" />
+
+    <!-- Remplissages de controles -->
+    <SolidColorBrush x:Key="Brush.ControlFill"         Color="#FDFDFD" />
+    <SolidColorBrush x:Key="Brush.ControlFillHover"    Color="#F6F6F6" />
+    <SolidColorBrush x:Key="Brush.ControlFillPressed"  Color="#F0F0F0" />
+    <SolidColorBrush x:Key="Brush.ControlFillDisabled" Color="#F5F5F5" />
+
+    <!-- Superpositions translucides (survol / appui) -->
+    <SolidColorBrush x:Key="Brush.SubtleHover"    Color="#0F000000" />
+    <SolidColorBrush x:Key="Brush.SubtlePressed"  Color="#0A000000" />
+    <SolidColorBrush x:Key="Brush.SubtleSelected" Color="#14000000" />
+
+    <!-- Accent -->
+    <SolidColorBrush x:Key="Brush.Accent"             Color="#0F6CBD" />
+    <SolidColorBrush x:Key="Brush.AccentHover"        Color="#1277C9" />
+    <SolidColorBrush x:Key="Brush.AccentPressed"      Color="#0E5390" />
+    <SolidColorBrush x:Key="Brush.AccentText"         Color="#FFFFFF" />
+    <SolidColorBrush x:Key="Brush.AccentDisabledFill" Color="#E6E6E6" />
+    <SolidColorBrush x:Key="Brush.AccentTextDisabled" Color="#A2A2A2" />
+    <SolidColorBrush x:Key="Brush.AccentSoft"         Color="#E8F1FB" />
+    <SolidColorBrush x:Key="Brush.AccentSoftText"     Color="#0E5390" />
+
+    <!-- Graphiques -->
+    <SolidColorBrush x:Key="Brush.ChartBar"    Color="#2F7FD1" />
+    <SolidColorBrush x:Key="Brush.ChartBarAlt" Color="#79B4E7" />
+    <SolidColorBrush x:Key="Brush.ChartTrack"  Color="#ECECEC" />
+    <SolidColorBrush x:Key="Brush.ChartGrid"   Color="#E9E9E9" />
+
+    <!-- Semantique -->
+    <SolidColorBrush x:Key="Brush.Danger"     Color="#C42B1C" />
+    <SolidColorBrush x:Key="Brush.DangerSoft" Color="#FDF0EF" />
+    <SolidColorBrush x:Key="Brush.Success"    Color="#0F7B0F" />
+
+    <!-- Ombres (surfaces flottantes uniquement) -->
+    <Color x:Key="Color.Shadow">#40000000</Color>
 
 </ResourceDictionary>

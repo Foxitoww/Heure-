@@ -7,122 +7,136 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:SalaryViewModel}">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <Grid Margin="20" MaxWidth="1000" HorizontalAlignment="Left">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.15*" />
-                <ColumnDefinition Width="20" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+    <Grid Style="{StaticResource PageRoot}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0">
+            <Grid Margin="32,26,32,32" MaxWidth="1120" HorizontalAlignment="Left">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.1*" />
+                    <ColumnDefinition Width="24" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0" Grid.ColumnSpan="3" Text="Salaire" Style="{StaticResource PageTitle}" Margin="0,0,0,16" />
-
-            <!-- ======= Paramètres ======= -->
-            <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
-                <StackPanel>
-                    <TextBlock Text="Paramètres de calcul" Style="{StaticResource SectionTitle}" />
-
-                    <TextBlock Text="Taux horaire brut" Style="{StaticResource KpiLabel}" />
-                    <TextBox Text="{Binding HourlyRate}" Width="160" HorizontalAlignment="Left" Margin="0,2,0,12" />
-
-                    <TextBlock Text="Coefficient des heures supplémentaires (1,25 = +25 %)" Style="{StaticResource KpiLabel}" />
-                    <TextBox Text="{Binding OvertimeMultiplier}" Width="160" HorizontalAlignment="Left" Margin="0,2,0,12" />
-
-                    <CheckBox Content="Indemnité de fin de mission (IFM / prime de précarité)" IsChecked="{Binding ApplyIfm}" />
-                    <StackPanel Orientation="Horizontal" Margin="24,4,0,12" IsEnabled="{Binding ApplyIfm}">
-                        <TextBox Text="{Binding IfmPercent}" Width="80" />
-                        <TextBlock Text=" %" VerticalAlignment="Center" Margin="6,0,0,0" />
-                    </StackPanel>
-
-                    <CheckBox Content="Indemnité compensatrice de congés payés (ICP)" IsChecked="{Binding ApplyIcp}" />
-                    <StackPanel Orientation="Horizontal" Margin="24,4,0,12" IsEnabled="{Binding ApplyIcp}">
-                        <TextBox Text="{Binding IcpPercent}" Width="80" />
-                        <TextBlock Text=" %" VerticalAlignment="Center" Margin="6,0,0,0" />
-                    </StackPanel>
-
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="Durée hebdo. de référence" Style="{StaticResource KpiLabel}" />
-                            <TextBox Text="{Binding WeeklyHours}" Margin="0,2,0,0" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="2">
-                            <TextBlock Text="Devise" Style="{StaticResource KpiLabel}" />
-                            <TextBox Text="{Binding Currency}" Margin="0,2,0,0" />
-                        </StackPanel>
-                    </Grid>
-
-                    <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
-                        <Button Style="{StaticResource AccentButton}" Content="Enregistrer" Command="{Binding SaveCommand}" />
-                        <Button Style="{StaticResource GhostButton}" Content="Réinitialiser" Margin="10,0,0,0" Command="{Binding ResetCommand}" />
-                    </StackPanel>
-
-                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Muted}" Margin="0,10,0,0"
-                               Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVis}}" />
+                <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,20">
+                    <TextBlock Text="Salaire" Style="{StaticResource PageTitle}" />
+                    <TextBlock Text="Paramètres de rémunération et estimation à partir de vos saisies."
+                               Style="{StaticResource PageSubtitle}" />
                 </StackPanel>
-            </Border>
 
-            <!-- ======= Estimation ======= -->
-            <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
-                <StackPanel>
-                    <TextBlock Text="Estimation du salaire" Style="{StaticResource SectionTitle}" />
+                <!-- Paramètres -->
+                <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="Paramètres de calcul" Style="{StaticResource SectionTitle}" />
 
-                    <ComboBox ItemsSource="{Binding ScopeOptions}" SelectedItem="{Binding SelectedScope}" Margin="0,0,0,6" />
-                    <TextBlock Text="{Binding ScopeLabel}" Style="{StaticResource Muted}" Margin="0,0,0,14" />
+                        <TextBlock Text="TAUX HORAIRE BRUT" Style="{StaticResource FieldLabel}" />
+                        <TextBox Text="{Binding HourlyRate}" Width="180" HorizontalAlignment="Left" Margin="0,0,0,16" />
 
-                    <Grid Margin="0,2">
-                        <TextBlock Text="Heures normales" Foreground="{DynamicResource Brush.TextMuted}" />
-                        <TextBlock Text="{Binding NormalHoursText}" HorizontalAlignment="Right" />
-                    </Grid>
-                    <Grid Margin="0,2,0,8">
-                        <TextBlock Text="  → rémunération" Foreground="{DynamicResource Brush.TextMuted}" />
-                        <TextBlock Text="{Binding NormalPayText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
-                    </Grid>
+                        <TextBlock Text="COEFFICIENT DES HEURES SUPPLÉMENTAIRES" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Text="1,25 correspond à une majoration de 25 %." Style="{StaticResource Caption}" Margin="0,0,0,5" />
+                        <TextBox Text="{Binding OvertimeMultiplier}" Width="180" HorizontalAlignment="Left" Margin="0,0,0,16" />
 
-                    <Grid Margin="0,2">
-                        <TextBlock Text="Heures supplémentaires" Foreground="{DynamicResource Brush.TextMuted}" />
-                        <TextBlock Text="{Binding OvertimeHoursText}" HorizontalAlignment="Right" />
-                    </Grid>
-                    <Grid Margin="0,2,0,8">
-                        <TextBlock Text="  → rémunération majorée" Foreground="{DynamicResource Brush.TextMuted}" />
-                        <TextBlock Text="{Binding OvertimePayText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
-                    </Grid>
+                        <Border Style="{StaticResource Divider}" />
 
-                    <Rectangle Height="1" Fill="{DynamicResource Brush.Border}" Margin="0,6" />
+                        <CheckBox Content="Indemnité de fin de mission (IFM / prime de précarité)" IsChecked="{Binding ApplyIfm}" />
+                        <StackPanel Orientation="Horizontal" Margin="30,4,0,10" IsEnabled="{Binding ApplyIfm}">
+                            <TextBox Text="{Binding IfmPercent}" Width="90" />
+                            <TextBlock Text="%" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource Brush.TextMuted}" />
+                        </StackPanel>
 
-                    <Grid Margin="0,2">
-                        <TextBlock Text="Brut estimé" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding GrossText}" HorizontalAlignment="Right" FontWeight="SemiBold" />
-                    </Grid>
-                    <Grid Margin="0,2" Visibility="{Binding ShowIfm, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="+ IFM" Foreground="{DynamicResource Brush.TextMuted}" />
-                        <TextBlock Text="{Binding IfmText}" HorizontalAlignment="Right" />
-                    </Grid>
-                    <Grid Margin="0,2" Visibility="{Binding ShowIcp, Converter={StaticResource BoolToVis}}">
-                        <TextBlock Text="+ Congés payés" Foreground="{DynamicResource Brush.TextMuted}" />
-                        <TextBlock Text="{Binding IcpText}" HorizontalAlignment="Right" />
-                    </Grid>
+                        <CheckBox Content="Indemnité compensatrice de congés payés (ICP)" IsChecked="{Binding ApplyIcp}" />
+                        <StackPanel Orientation="Horizontal" Margin="30,4,0,0" IsEnabled="{Binding ApplyIcp}">
+                            <TextBox Text="{Binding IcpPercent}" Width="90" />
+                            <TextBlock Text="%" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource Brush.TextMuted}" />
+                        </StackPanel>
 
-                    <Border Background="{DynamicResource Brush.AccentSoft}" CornerRadius="10" Padding="12" Margin="0,12,0,0">
+                        <Border Style="{StaticResource Divider}" />
+
                         <Grid>
-                            <TextBlock Text="Total estimé" FontWeight="Bold" FontSize="15" VerticalAlignment="Center" />
-                            <TextBlock Text="{Binding TotalText}" HorizontalAlignment="Right" FontWeight="Bold" FontSize="18"
-                                       Foreground="{DynamicResource Brush.Accent}" />
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="16" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="DURÉE HEBDO. DE RÉFÉRENCE" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding WeeklyHours}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="DEVISE" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding Currency}" />
+                            </StackPanel>
                         </Grid>
-                    </Border>
 
-                    <TextBlock Style="{StaticResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap"
-                               Text="Estimation indicative basée sur vos saisies et vos paramètres. Ne remplace pas un bulletin de paie." />
-                </StackPanel>
-            </Border>
-        </Grid>
-    </ScrollViewer>
+                        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                            <Button Style="{StaticResource AccentButton}" Content="Enregistrer" Command="{Binding SaveCommand}" />
+                            <Button Style="{StaticResource SubtleButton}" Content="Réinitialiser" Margin="8,0,0,0" Command="{Binding ResetCommand}" />
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Caption}" Margin="0,12,0,0"
+                                   Foreground="{DynamicResource Brush.Success}"
+                                   Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVis}}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Estimation -->
+                <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
+                    <StackPanel>
+                        <TextBlock Text="Estimation du salaire" Style="{StaticResource SectionTitle}" />
+
+                        <ComboBox ItemsSource="{Binding ScopeOptions}" SelectedItem="{Binding SelectedScope}" />
+                        <TextBlock Text="{Binding ScopeLabel}" Style="{StaticResource Caption}" Margin="0,8,0,16" />
+
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Heures normales" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBlock Text="{Binding NormalHoursText}" HorizontalAlignment="Right" />
+                        </Grid>
+                        <Grid Margin="0,3,0,10">
+                            <TextBlock Text="Rémunération" Foreground="{DynamicResource Brush.TextTertiary}" Margin="12,0,0,0" />
+                            <TextBlock Text="{Binding NormalPayText}" HorizontalAlignment="Right" Style="{StaticResource BodyStrong}" />
+                        </Grid>
+
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Heures supplémentaires" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBlock Text="{Binding OvertimeHoursText}" HorizontalAlignment="Right" />
+                        </Grid>
+                        <Grid Margin="0,3,0,10">
+                            <TextBlock Text="Rémunération majorée" Foreground="{DynamicResource Brush.TextTertiary}" Margin="12,0,0,0" />
+                            <TextBlock Text="{Binding OvertimePayText}" HorizontalAlignment="Right" Style="{StaticResource BodyStrong}" />
+                        </Grid>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,6" />
+
+                        <Grid Margin="0,3">
+                            <TextBlock Text="Brut estimé" Style="{StaticResource BodyStrong}" />
+                            <TextBlock Text="{Binding GrossText}" HorizontalAlignment="Right" Style="{StaticResource BodyStrong}" />
+                        </Grid>
+                        <Grid Margin="0,3" Visibility="{Binding ShowIfm, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="+ IFM" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBlock Text="{Binding IfmText}" HorizontalAlignment="Right" />
+                        </Grid>
+                        <Grid Margin="0,3" Visibility="{Binding ShowIcp, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="+ Congés payés" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBlock Text="{Binding IcpText}" HorizontalAlignment="Right" />
+                        </Grid>
+
+                        <Border Style="{StaticResource CardAccent}" Padding="14" Margin="0,14,0,0">
+                            <Grid>
+                                <TextBlock Text="Total estimé" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Brush.AccentSoftText}" />
+                                <TextBlock Text="{Binding TotalText}" HorizontalAlignment="Right" FontWeight="SemiBold" FontSize="20"
+                                           FontFamily="{StaticResource Font.Display}"
+                                           Foreground="{DynamicResource Brush.AccentSoftText}" />
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Style="{StaticResource Caption}" Margin="0,12,0,0" TextWrapping="Wrap"
+                                   Text="Estimation indicative basée sur vos saisies et vos paramètres. Ne remplace pas un bulletin de paie." />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+    </Grid>
 </UserControl>
