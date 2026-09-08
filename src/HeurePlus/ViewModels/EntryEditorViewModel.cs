@@ -56,7 +56,10 @@ public sealed class EntryEditorViewModel : ObservableObject
 
     public string Title { get; }
 
-    public sealed record StatusOption(DayStatus Value, string Label);
+    public sealed record StatusOption(DayStatus Value, string Label)
+    {
+        public override string ToString() => Label;
+    }
 
     public IReadOnlyList<StatusOption> StatusOptions { get; } =
         Enum.GetValues<DayStatus>().Select(s => new StatusOption(s, s.Label())).ToArray();
