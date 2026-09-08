@@ -1,18 +1,32 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace HeurePlus.Services;
 
 /// <summary>
-/// Met à jour l'application depuis le dépôt git (branche <c>0.1</c>).
-/// Fonctionne uniquement quand l'exécutable tourne depuis le dépôt source
-/// (contexte développement) ; sinon, propose une mise à jour manuelle.
+/// Vérifie et applique les mises à jour de Heure+ via <b>GitHub Releases</b>
+/// (fonctionne pour la version installée comme pour la version lancée depuis
+/// les sources). La détection d'un dépôt git local sert seulement à indiquer
+/// qu'on est en « version de développement ».
 /// </summary>
 public sealed class UpdateService
 {
-    public const string Branch = "0.1";
+    /// <summary>Dépôt GitHub « propriétaire/nom ».</summary>
+    public const string GitHubRepo = "Foxitoww/Heure-";
+
+    private static readonly HttpClient Http = CreateHttp();
+
+    private static HttpClient CreateHttp()
+    {
+        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("HeurePlus-Updater");
+        client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+        return client;
+    }
 
     public string? RepoRoot { get; }
 
@@ -30,92 +44,96 @@ public sealed class UpdateService
         }
     }
 
-    public bool IsAvailable => RepoRoot is not null;
+    /// <summary>Vrai si l'exécutable tourne à l'intérieur du dépôt source.</summary>
+    public bool RunningFromSources => RepoRoot is not null;
 
-    public sealed record UpdateStatus(bool RepoFound, string Branch, string ShortCommit,
-        string CommitDate, int Behind, string Message);
+    public sealed record ReleaseInfo(
+        string Tag, string Name, string Notes,
+        Version? Version, string? InstallerUrl, long InstallerSize, string HtmlUrl);
 
-    public UpdateStatus Check()
-    {
-        if (RepoRoot is null)
-            return new UpdateStatus(false, "—", "—", "", 0,
-                "Dépôt git introuvable : l'application n'est pas lancée depuis les sources. Mise à jour manuelle.");
-
-        string branch = Git("rev-parse --abbrev-ref HEAD").output;
-        string commit = Git("rev-parse --short HEAD").output;
-        string date = Git("show -s --format=%cd --date=format:%d/%m/%Y HEAD").output;
-
-        bool online = Git($"fetch --quiet origin {Branch}", 15000).code == 0;
-
-        int behind = int.TryParse(Git($"rev-list --count HEAD..origin/{Branch}").output, out var b) ? b : 0;
-
-        string message = behind > 0
-            ? $"Mise à jour disponible : {behind} nouveau(x) commit(s) sur origin/{Branch}."
-            : online
-                ? "L'application est à jour."
-                : "Dépôt distant injoignable — comparaison avec la dernière version connue : à jour.";
-
-        return new UpdateStatus(true, branch, commit, date, behind, message);
-    }
-
-    /// <summary>Fait un fast-forward de la branche courante sur origin/0.1.</summary>
-    public (bool ok, string output) Update()
-    {
-        if (RepoRoot is null) return (false, "Dépôt git introuvable.");
-
-        string current = Git("rev-parse --abbrev-ref HEAD").output;
-        if (!string.Equals(current, Branch, StringComparison.OrdinalIgnoreCase))
-        {
-            var co = Git($"checkout {Branch}", 30000);
-            if (co.code != 0) return (false, "Bascule sur " + Branch + " impossible.\n" + co.output);
-        }
-
-        var (code, output) = Git($"merge --ff-only origin/{Branch}", 60000);
-        if (code != 0) return (false, string.IsNullOrWhiteSpace(output) ? "Échec de la mise à jour." : output);
-
-        string newCommit = Git("rev-parse --short HEAD").output;
-        return (true, $"Mise à jour appliquée (commit {newCommit}). Recompilez / relancez l'application.");
-    }
-
-    private (int code, string output) Git(string arguments, int timeoutMs = 15000)
+    /// <summary>Dernière release publiée sur GitHub (null si injoignable / aucune).</summary>
+    public async Task<ReleaseInfo?> LatestReleaseAsync()
     {
         try
         {
-            var psi = new ProcessStartInfo("git", arguments)
+            var url = $"https://api.github.com/repos/{GitHubRepo}/releases/latest";
+            using var response = await Http.GetAsync(url).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode) return null;
+
+            await using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            using var doc = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
+            var root = doc.RootElement;
+
+            string tag = root.TryGetProperty("tag_name", out var t) ? t.GetString() ?? "" : "";
+            string name = root.TryGetProperty("name", out var n) && !string.IsNullOrWhiteSpace(n.GetString())
+                ? n.GetString()! : tag;
+            string notes = root.TryGetProperty("body", out var b) ? b.GetString() ?? "" : "";
+            string html = root.TryGetProperty("html_url", out var h) ? h.GetString() ?? "" : "";
+
+            Version.TryParse(tag.TrimStart('v', 'V'), out var version);
+
+            string? installer = null;
+            long size = 0;
+            if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
             {
-                WorkingDirectory = RepoRoot,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8
-            };
-            // Ne jamais demander d'identifiants de façon interactive : échec rapide sinon.
-            psi.Environment["GIT_TERMINAL_PROMPT"] = "0";
-            psi.Environment["GCM_INTERACTIVE"] = "Never";
-            psi.Environment["GIT_ASKPASS"] = "echo";
-
-            using var process = Process.Start(psi);
-            if (process is null) return (-1, "git introuvable.");
-
-            var sb = new StringBuilder();
-            process.OutputDataReceived += (_, e) => { if (e.Data is not null) sb.AppendLine(e.Data); };
-            process.ErrorDataReceived += (_, e) => { if (e.Data is not null) sb.AppendLine(e.Data); };
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
-
-            if (!process.WaitForExit(timeoutMs))
-            {
-                try { process.Kill(entireProcessTree: true); } catch { /* ignore */ }
-                return (-1, "Délai dépassé.");
+                foreach (var asset in assets.EnumerateArray())
+                {
+                    string an = asset.TryGetProperty("name", out var ap) ? ap.GetString() ?? "" : "";
+                    if (an.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                    {
+                        installer = asset.TryGetProperty("browser_download_url", out var du) ? du.GetString() : null;
+                        size = asset.TryGetProperty("size", out var sz) ? sz.GetInt64() : 0;
+                        break;
+                    }
+                }
             }
-            process.WaitForExit();
-            return (process.ExitCode, sb.ToString().Trim());
+
+            return new ReleaseInfo(tag, name, notes.Trim(), version, installer, size, html);
         }
-        catch (Exception ex)
+        catch
         {
-            return (-1, ex.Message);
+            return null;
         }
+    }
+
+    /// <summary>Télécharge l'installeur dans %TEMP%. Retourne le chemin ou null.</summary>
+    public async Task<string?> DownloadInstallerAsync(string url, IProgress<double>? progress = null)
+    {
+        try
+        {
+            string path = Path.Combine(Path.GetTempPath(), "HeurePlus-Setup-update.exe");
+
+            using var response = await Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            long? total = response.Content.Headers.ContentLength;
+            await using var src = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+            await using var dst = File.Create(path);
+
+            var buffer = new byte[81920];
+            long read = 0;
+            int got;
+            while ((got = await src.ReadAsync(buffer).ConfigureAwait(false)) > 0)
+            {
+                await dst.WriteAsync(buffer.AsMemory(0, got)).ConfigureAwait(false);
+                read += got;
+                if (total is > 0) progress?.Report((double)read / total.Value);
+            }
+
+            return path;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public static void RunInstaller(string path) =>
+        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+
+    public static void OpenReleasePage(string url)
+    {
+        try { Process.Start(new ProcessStartInfo(url) { UseShellExecute = true }); }
+        catch { /* ignore */ }
     }
 }

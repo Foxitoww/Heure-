@@ -58,9 +58,7 @@ public sealed class SettingsViewModel : ObservableObject
         CheckUpdateCommand = new RelayCommand(_ => _ = CheckUpdateAsync(), _ => !_updateBusy);
         ApplyUpdateCommand = new RelayCommand(_ => _ = ApplyUpdateAsync(), _ => !_updateBusy && _updateAvailable);
 
-        _updateInfoText = _update.IsAvailable
-            ? "Cliquez sur « Vérifier les mises à jour »."
-            : "Application installée : mise à jour manuelle (réinstaller la dernière version).";
+        _ = CheckUpdateOnStartupAsync();
     }
 
     public RelayCommand BackupNowCommand { get; }
@@ -214,68 +212,131 @@ public sealed class SettingsViewModel : ObservableObject
         }
     }
 
-    // ---------- Mise à jour (git, branche 0.1) ----------
+    // ---------- Mise à jour (GitHub Releases) ----------
 
     public RelayCommand CheckUpdateCommand { get; }
     public RelayCommand ApplyUpdateCommand { get; }
 
-    public bool UpdateRepoAvailable => _update.IsAvailable;
+    /// <summary>Toujours visible : la mise à jour par GitHub marche partout.</summary>
+    public bool UpdateRepoAvailable => true;
+
+    public string UpdateModeText => _update.RunningFromSources
+        ? $"Version de développement — {VersionText}"
+        : $"Version installée — {VersionText}";
 
     private bool _updateBusy;
     private bool _updateAvailable;
-    public bool UpdateAvailable { get => _updateAvailable; private set { SetProperty(ref _updateAvailable, value); ApplyUpdateCommand.RaiseCanExecuteChanged(); } }
+    public bool UpdateAvailable
+    {
+        get => _updateAvailable;
+        private set { SetProperty(ref _updateAvailable, value); ApplyUpdateCommand.RaiseCanExecuteChanged(); }
+    }
 
-    private string _updateInfoText = "";
+    private string _updateInfoText = "Cliquez sur « Vérifier les mises à jour ».";
     public string UpdateInfoText { get => _updateInfoText; private set => SetProperty(ref _updateInfoText, value); }
 
     private string _updateDetailText = "";
     public string UpdateDetailText { get => _updateDetailText; private set => SetProperty(ref _updateDetailText, value); }
 
+    private UpdateService.ReleaseInfo? _latestRelease;
+
+    /// <summary>Vérification silencieuse au démarrage (n'affiche rien si tout va bien / hors ligne).</summary>
+    public async Task CheckUpdateOnStartupAsync()
+    {
+        var release = await Task.Run(() => _update.LatestReleaseAsync());
+        if (release is null) return;
+
+        var current = Assembly.GetExecutingAssembly().GetName().Version;
+        if (release.Version is not null && current is not null && release.Version > current)
+        {
+            _latestRelease = release;
+            UpdateInfoText = $"Nouvelle version disponible : {release.Tag} (vous avez la {current.ToString(3)}).";
+            UpdateDetailText = release.Notes;
+            UpdateAvailable = true;
+        }
+    }
+
     private async Task CheckUpdateAsync()
     {
-        _updateBusy = true;
-        CheckUpdateCommand.RaiseCanExecuteChanged();
-        ApplyUpdateCommand.RaiseCanExecuteChanged();
+        SetUpdateBusy(true);
         UpdateInfoText = "Vérification en cours…";
         UpdateDetailText = "";
 
-        var status = await Task.Run(() => _update.Check());
+        var release = await Task.Run(() => _update.LatestReleaseAsync());
+        var current = Assembly.GetExecutingAssembly().GetName().Version;
+        _latestRelease = release;
 
-        UpdateInfoText = status.Message;
-        UpdateDetailText = status.RepoFound
-            ? $"Branche {status.Branch} · commit {status.ShortCommit} du {status.CommitDate}"
-            : "";
-        UpdateAvailable = status.Behind > 0;
+        if (release is null)
+        {
+            UpdateInfoText = "Impossible de contacter GitHub, ou aucune version n'a encore été publiée.";
+            UpdateAvailable = false;
+        }
+        else if (release.Version is not null && current is not null && release.Version > current)
+        {
+            UpdateInfoText = $"Nouvelle version disponible : {release.Tag} (vous avez la {current.ToString(3)}).";
+            UpdateDetailText = release.Notes;
+            UpdateAvailable = release.InstallerUrl is not null;
+            if (release.InstallerUrl is null)
+                UpdateInfoText += " — aucun installeur joint à cette release.";
+        }
+        else
+        {
+            UpdateInfoText = $"L'application est à jour (version {current?.ToString(3)}).";
+            UpdateDetailText = "";
+            UpdateAvailable = false;
+        }
 
-        _updateBusy = false;
-        CheckUpdateCommand.RaiseCanExecuteChanged();
-        ApplyUpdateCommand.RaiseCanExecuteChanged();
-        _activityLog.Log(ActivityCategory.Reglages, "Vérification des mises à jour — " + status.Message);
+        SetUpdateBusy(false);
+        _activityLog.Log(ActivityCategory.Reglages, "Vérification des mises à jour — " + UpdateInfoText);
     }
 
     private async Task ApplyUpdateAsync()
     {
+        if (_latestRelease?.InstallerUrl is not { } url)
+        {
+            UpdateInfoText = "Aucun installeur à télécharger. Vérifiez d'abord les mises à jour.";
+            return;
+        }
+
+        string sizeText = _latestRelease.InstallerSize > 0
+            ? $" (~{_latestRelease.InstallerSize / 1024 / 1024} Mo)" : "";
         if (MessageBox.Show(
-                "Mettre à jour l'application depuis la branche 0.1 ?\n" +
-                "Un fast-forward git sera effectué ; recompilez / relancez ensuite.",
+                $"Télécharger et installer la version {_latestRelease.Tag}{sizeText} ?\n" +
+                "L'application se fermera pour lancer l'installeur. Vos données sont conservées.",
                 "Heure+", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
-        _updateBusy = true;
-        CheckUpdateCommand.RaiseCanExecuteChanged();
-        ApplyUpdateCommand.RaiseCanExecuteChanged();
-        UpdateInfoText = "Mise à jour en cours…";
+        SetUpdateBusy(true);
+        UpdateInfoText = "Téléchargement de l'installeur…";
 
-        var (ok, output) = await Task.Run(() => _update.Update());
+        var progress = new Progress<double>(p =>
+            UpdateInfoText = $"Téléchargement de l'installeur… {p * 100:0} %");
+        string? file = await _update.DownloadInstallerAsync(url, progress);
 
-        UpdateInfoText = output;
-        if (ok)
+        SetUpdateBusy(false);
+
+        if (file is null)
         {
-            UpdateAvailable = false;
-            _activityLog.Log(ActivityCategory.Reglages, "Mise à jour appliquée depuis origin/0.1");
+            UpdateInfoText = "Échec du téléchargement. Réessayez ou téléchargez la release depuis GitHub.";
+            return;
         }
 
-        _updateBusy = false;
+        _activityLog.Log(ActivityCategory.Reglages, $"Installeur {_latestRelease.Tag} téléchargé, lancement…");
+        UpdateService.RunInstaller(file);
+        Application.Current.Shutdown();
+    }
+
+    public RelayCommand OpenReleasePageCommand => new(_ =>
+    {
+        if (_latestRelease is { HtmlUrl: { Length: > 0 } url })
+            UpdateService.OpenReleasePage(url);
+        else
+            UpdateService.OpenReleasePage($"https://github.com/{UpdateService.GitHubRepo}/releases");
+    });
+
+    private void SetUpdateBusy(bool busy)
+    {
+        _updateBusy = busy;
         CheckUpdateCommand.RaiseCanExecuteChanged();
         ApplyUpdateCommand.RaiseCanExecuteChanged();
     }
