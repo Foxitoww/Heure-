@@ -31,6 +31,7 @@ public partial class App : Application
         var entryRepo = new DayEntryRepository(database, events);
         var settingsRepo = new SettingsRepository(database, events);
         var activityLog = new ActivityLogRepository(database, events);
+        var cycleRepo = new CycleRepository(database);
         var dialogs = new DialogService();
         var backup = new BackupService(database);
         var theme = new ThemeManager();
@@ -49,7 +50,7 @@ public partial class App : Application
         };
 
         var main = new MainViewModel(
-            new CalendarViewModel(entryRepo, settingsRepo, activityLog, events, showEditor),
+            new CalendarViewModel(entryRepo, settingsRepo, activityLog, cycleRepo, events, showEditor),
             new SalaryViewModel(entryRepo, settingsRepo, activityLog, events),
             new CalculatorViewModel(),
             new DashboardViewModel(entryRepo, settingsRepo, events),

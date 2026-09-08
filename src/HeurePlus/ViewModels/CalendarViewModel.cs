@@ -16,6 +16,7 @@ public sealed class CalendarViewModel : ObservableObject
     private readonly DayEntryRepository _repo;
     private readonly SettingsRepository _settingsRepo;
     private readonly ActivityLogRepository _activityLog;
+    private readonly CycleRepository _cycleRepo;
     private readonly AppEvents _events;
     private readonly Func<EntryEditorViewModel, bool?> _showEditor;
 
@@ -25,12 +26,14 @@ public sealed class CalendarViewModel : ObservableObject
         DayEntryRepository repo,
         SettingsRepository settingsRepo,
         ActivityLogRepository activityLog,
+        CycleRepository cycleRepo,
         AppEvents events,
         Func<EntryEditorViewModel, bool?> showEditor)
     {
         _repo = repo;
         _settingsRepo = settingsRepo;
         _activityLog = activityLog;
+        _cycleRepo = cycleRepo;
         _events = events;
         _showEditor = showEditor;
 
@@ -46,6 +49,7 @@ public sealed class CalendarViewModel : ObservableObject
         AddCycleCommand = new RelayCommand(_ => OpenEditor(EntryKind.Cycle));
         EditSelectedCommand = new RelayCommand(_ => OpenEditor(EntryKind.Day), _ => SelectedDay is not null);
         DeleteSelectedCommand = new RelayCommand(_ => DeleteSelected(), _ => SelectedDay?.Entry is not null);
+        EditCycleCommand = new RelayCommand(_ => EditCycle(), _ => _selectedDayCycle is not null);
 
         _events.EntriesChanged += ReloadKeepingSelection;
         _events.SettingsChanged += OnSettingsChanged;
@@ -68,6 +72,8 @@ public sealed class CalendarViewModel : ObservableObject
 
     public DayDetailsViewModel Details { get; } = new();
 
+    private HeurePlus.Models.CyclePlan? _selectedDayCycle;
+
     private DayCellViewModel? _selectedDay;
     public DayCellViewModel? SelectedDay
     {
@@ -78,10 +84,13 @@ public sealed class CalendarViewModel : ObservableObject
             _selectedDay = value;
             if (_selectedDay is not null) _selectedDay.IsSelected = true;
 
+            _selectedDayCycle = _selectedDay is null ? null : _cycleRepo.GetForDate(_selectedDay.Date);
+
             OnPropertyChanged();
-            Details.SetCell(_selectedDay);
+            Details.SetCell(_selectedDay, _selectedDayCycle);
             EditSelectedCommand.RaiseCanExecuteChanged();
             DeleteSelectedCommand.RaiseCanExecuteChanged();
+            EditCycleCommand.RaiseCanExecuteChanged();
         }
     }
 
@@ -96,6 +105,7 @@ public sealed class CalendarViewModel : ObservableObject
     public RelayCommand AddCycleCommand { get; }
     public RelayCommand EditSelectedCommand { get; }
     public RelayCommand DeleteSelectedCommand { get; }
+    public RelayCommand EditCycleCommand { get; }
 
     // ---------- Logique ----------
 
@@ -179,13 +189,26 @@ public sealed class CalendarViewModel : ObservableObject
         var existing = kind == EntryKind.Day && SelectedDay is not null ? _repo.Get(SelectedDay.Date) : null;
         var salary = _settingsRepo.LoadSalary();
 
-        var editor = new EntryEditorViewModel(_repo, _activityLog, salary, anchor, existing, kind);
-        var result = _showEditor(editor);
+        var editor = new EntryEditorViewModel(_repo, _activityLog, _cycleRepo, salary, anchor, existing, kind);
+        RunEditor(editor, anchor);
+    }
 
-        if (result == true)
+    private void EditCycle()
+    {
+        if (_selectedDayCycle is null) return;
+        var anchor = _selectedDayCycle.StartDate;
+        var salary = _settingsRepo.LoadSalary();
+        var editor = new EntryEditorViewModel(_repo, _activityLog, _cycleRepo, salary, anchor, null,
+            EntryKind.Cycle, _selectedDayCycle);
+        RunEditor(editor, SelectedDay?.Date ?? anchor);
+    }
+
+    private void RunEditor(EntryEditorViewModel editor, DateOnly reselect)
+    {
+        if (_showEditor(editor) == true)
         {
             // EntriesChanged a déjà rechargé le mois ; on resélectionne la date d'ancrage.
-            var target = Days.FirstOrDefault(c => c.Date == anchor);
+            var target = Days.FirstOrDefault(c => c.Date == reselect);
             if (target is not null) SelectedDay = target;
         }
     }

@@ -105,6 +105,18 @@
                         </StackPanel>
                     </Grid>
 
+                    <Border Style="{StaticResource Chip}" Margin="0,14,0,0" Padding="12,8"
+                            Background="{DynamicResource Brush.AccentSoft}"
+                            Visibility="{Binding IsInCycle, Converter={StaticResource BoolToVis}}">
+                        <Grid>
+                            <TextBlock Text="{Binding CycleLabel}" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource Brush.AccentSoftText}" />
+                            <Button Style="{StaticResource GhostButton}" Content="Modifier le cycle" HorizontalAlignment="Right"
+                                    MinHeight="30" Padding="12,0"
+                                    Command="{Binding DataContext.EditCycleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                        </Grid>
+                    </Border>
+
                     <Grid Margin="0,18,0,0" Visibility="{Binding HasEntry, Converter={StaticResource BoolToVis}}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />

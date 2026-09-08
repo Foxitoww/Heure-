@@ -56,8 +56,7 @@
                             <DatePicker SelectedDate="{Binding EndDate}" />
                         </StackPanel>
                     </Grid>
-                    <CheckBox Content="Inclure les samedis et dimanches" IsChecked="{Binding IncludeWeekends}" Margin="0,12,0,0"
-                              Visibility="{Binding IsPeriod, Converter={StaticResource BoolToVis}}" />
+                    <CheckBox Content="Travailler les samedis et dimanches" IsChecked="{Binding IncludeWeekends}" Margin="0,12,0,0" />
                     <Border Style="{StaticResource Divider}" />
                 </StackPanel>
 
@@ -197,19 +196,21 @@
                 <CheckBox Content="Taux horaire spécifique pour cette saisie" IsChecked="{Binding UseCustomRate}" Margin="0,16,0,0" />
                 <TextBox Text="{Binding CustomRate}" IsEnabled="{Binding UseCustomRate}" Width="150" HorizontalAlignment="Left" Margin="0,4,0,0" />
 
-                <Border Style="{StaticResource Divider}" />
-                <TextBlock Text="APPLIQUER AUX JOURS DÉJÀ REMPLIS" Style="{StaticResource FieldLabel}" />
-                <StackPanel>
-                    <RadioButton Content="Remplacer la saisie existante" GroupName="ApplyMode" IsChecked="{Binding ModeReplace}" />
-                    <RadioButton Content="Cumuler les heures (ajouter / retirer sans écraser le travail)" GroupName="ApplyMode"
-                                 IsChecked="{Binding ModeAdd}" />
-                    <RadioButton Content="Ignorer les jours déjà remplis" GroupName="ApplyMode"
-                                 IsChecked="{Binding ModeSkip}"
-                                 Visibility="{Binding IsSingleDay, Converter={StaticResource BoolToVis}, ConverterParameter=invert}" />
+                <StackPanel Visibility="{Binding IsCycle, Converter={StaticResource BoolToVis}, ConverterParameter=invert}">
+                    <Border Style="{StaticResource Divider}" />
+                    <TextBlock Text="APPLIQUER AUX JOURS DÉJÀ REMPLIS" Style="{StaticResource FieldLabel}" />
+                    <StackPanel>
+                        <RadioButton Content="Remplacer la saisie existante" GroupName="ApplyMode" IsChecked="{Binding ModeReplace}" />
+                        <RadioButton Content="Cumuler les heures (ajouter / retirer sans écraser le travail)" GroupName="ApplyMode"
+                                     IsChecked="{Binding ModeAdd}" />
+                        <RadioButton Content="Ignorer les jours déjà remplis" GroupName="ApplyMode"
+                                     IsChecked="{Binding ModeSkip}"
+                                     Visibility="{Binding IsSingleDay, Converter={StaticResource BoolToVis}, ConverterParameter=invert}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
+                               Visibility="{Binding IsAddMode, Converter={StaticResource BoolToVis}}"
+                               Text="Les heures saisies s'ajoutent (ou se retirent, si négatives) à celles déjà enregistrées. Les jours vides sont créés normalement." />
                 </StackPanel>
-                <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
-                           Visibility="{Binding IsAddMode, Converter={StaticResource BoolToVis}}"
-                           Text="Les heures saisies s'ajoutent (ou se retirent, si négatives) à celles déjà enregistrées. Les jours vides sont créés normalement." />
 
                 <TextBlock Text="NOTE" Style="{StaticResource FieldLabel}" Margin="0,16,0,5" />
                 <TextBox Text="{Binding Note}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"

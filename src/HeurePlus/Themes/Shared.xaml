@@ -21,11 +21,12 @@
     <FontFamily x:Key="Font.Display">Segoe UI Variable Display, Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="Font.Icons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
-    <!-- ================= Couleurs de statut ================= -->
-    <SolidColorBrush x:Key="Status.Travail"   Color="#3A7DDA" />
-    <SolidColorBrush x:Key="Status.HeuresSup" Color="#D9820A" />
-    <SolidColorBrush x:Key="Status.Conge"     Color="#22A45D" />
-    <SolidColorBrush x:Key="Status.Repos"     Color="#9AA0A6" />
+    <!-- ================= Couleurs de statut (trait sous les jours) ================= -->
+    <SolidColorBrush x:Key="Status.Travail"   Color="#3A7DDA" />  <!-- travail : bleu -->
+    <SolidColorBrush x:Key="Status.HeuresSup" Color="#2FA84F" />  <!-- heures sup. : vert -->
+    <SolidColorBrush x:Key="Status.Retrait"   Color="#E5484D" />  <!-- heures retirees : rouge -->
+    <SolidColorBrush x:Key="Status.Conge"     Color="#8B5CF6" />  <!-- conge : violet -->
+    <SolidColorBrush x:Key="Status.Repos"     Color="#EAB308" />  <!-- repos : jaune -->
     <SolidColorBrush x:Key="Status.None"      Color="#00000000" />
 
     <!-- Ombre des surfaces flottantes (menus, infobulles) -->
@@ -1109,7 +1110,7 @@
                         <Border x:Name="StatusBar" Height="3" Width="18" CornerRadius="1.5"
                                 VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,7"
                                 Visibility="Collapsed"
-                                Background="{Binding StatusKey, Converter={StaticResource StatusToBrush}}" />
+                                Background="{Binding BarColorKey, Converter={StaticResource StatusToBrush}}" />
                     </Grid>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">

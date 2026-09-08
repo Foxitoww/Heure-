@@ -64,6 +64,17 @@ public sealed class AppDatabase
             );
 
             CREATE INDEX IF NOT EXISTS IX_ActivityLog_Timestamp ON ActivityLog(Timestamp DESC);
+
+            CREATE TABLE IF NOT EXISTS Cycles (
+                Id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+                StartDate          TEXT    NOT NULL,
+                EndDate            TEXT    NOT NULL,
+                IncludeWeekends    INTEGER NOT NULL DEFAULT 0,
+                HourlyRateOverride REAL    NULL,
+                Note               TEXT    NOT NULL DEFAULT '',
+                StepsJson          TEXT    NOT NULL,
+                UpdatedAt          TEXT    NOT NULL
+            );
             """;
         command.ExecuteNonQuery();
     }

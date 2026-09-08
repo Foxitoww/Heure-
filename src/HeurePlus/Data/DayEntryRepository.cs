@@ -101,6 +101,17 @@ public sealed class DayEntryRepository
         if (notify) _events.RaiseEntriesChanged();
     }
 
+    public void DeleteRange(DateOnly from, DateOnly to, bool notify = true)
+    {
+        using var connection = _db.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM DayEntries WHERE Date >= $a AND Date <= $b";
+        command.Parameters.AddWithValue("$a", from.ToString(DateFormat, CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$b", to.ToString(DateFormat, CultureInfo.InvariantCulture));
+        command.ExecuteNonQuery();
+        if (notify) _events.RaiseEntriesChanged();
+    }
+
     private const string UpsertSql = """
         INSERT INTO DayEntries
             (Date, Status, StartTime, EndTime, BreakMinutes, NormalHours, OvertimeHours, HourlyRateOverride, Note, UpdatedAt)

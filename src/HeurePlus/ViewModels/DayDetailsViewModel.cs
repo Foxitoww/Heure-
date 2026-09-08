@@ -7,14 +7,22 @@ namespace HeurePlus.ViewModels;
 public sealed class DayDetailsViewModel : ObservableObject
 {
     private DayCellViewModel? _cell;
+    private CyclePlan? _cycle;
 
-    public void SetCell(DayCellViewModel? cell)
+    public void SetCell(DayCellViewModel? cell, CyclePlan? cycle = null)
     {
         _cell = cell;
+        _cycle = cycle;
         RaiseAll();
     }
 
     public bool HasSelection => _cell is not null;
+
+    public bool IsInCycle => _cycle is not null;
+
+    public string CycleLabel => _cycle is null
+        ? string.Empty
+        : $"Ce jour fait partie d'un cycle {_cycle.RangeLabel}.";
 
     public bool HasEntry => _cell?.Entry is not null;
 

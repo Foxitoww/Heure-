@@ -15,28 +15,60 @@ public sealed class EntryEditorViewModel : ObservableObject
 {
     private readonly DayEntryRepository _repo;
     private readonly ActivityLogRepository _activityLog;
+    private readonly CycleRepository _cycleRepo;
     private readonly SalarySettings _salary;
+
+    private long _editingCycleId;
+    private DateOnly _originalCycleStart, _originalCycleEnd;
 
     public event Action<bool>? CloseRequested;
 
     public EntryEditorViewModel(
         DayEntryRepository repo,
         ActivityLogRepository activityLog,
+        CycleRepository cycleRepo,
         SalarySettings salary,
         DateOnly date,
         DayEntry? existing,
-        EntryKind kind)
+        EntryKind kind,
+        CyclePlan? editCycle = null)
     {
         _repo = repo;
         _activityLog = activityLog;
+        _cycleRepo = cycleRepo;
         _salary = salary;
 
-        _kind = kind;
+        _kind = editCycle is not null ? EntryKind.Cycle : kind;
         _date = date.ToDateTime(default);
         _startDate = _date;
         _endDate = _date.AddDays(13);
+        _customRate = salary.HourlyRate;
 
-        if (existing is not null)
+        SaveCommand = new RelayCommand(_ => Save());
+        CancelCommand = new RelayCommand(_ => CloseRequested?.Invoke(false));
+        ComputeFromScheduleCommand = new RelayCommand(_ => ComputeFromSchedule());
+        AddCycleStepCommand = new RelayCommand(_ => AddCycleStep());
+        RemoveCycleStepCommand = new RelayCommand(p => RemoveCycleStep(p as CycleStepViewModel));
+        ApplyPresetCommand = new RelayCommand(p => ApplyPreset(p?.ToString() ?? ""));
+
+        if (editCycle is not null)
+        {
+            _editingCycleId = editCycle.Id;
+            _originalCycleStart = editCycle.StartDate;
+            _originalCycleEnd = editCycle.EndDate;
+            _startDate = editCycle.StartDate.ToDateTime(default);
+            _endDate = editCycle.EndDate.ToDateTime(default);
+            _includeWeekends = editCycle.IncludeWeekends;
+            _useCustomRate = editCycle.HourlyRateOverride is > 0;
+            _customRate = editCycle.HourlyRateOverride ?? salary.HourlyRate;
+            _note = editCycle.Note;
+            foreach (var s in editCycle.Steps)
+                CycleSteps.Add(new CycleStepViewModel(CycleSteps.Count + 1, (DayStatus)s.Status,
+                    s.Start ?? string.Empty, s.End ?? string.Empty, s.BreakMinutes, s.NormalHours, s.OvertimeHours));
+            Renumber();
+            Title = "Modifier le cycle";
+        }
+        else if (existing is not null)
         {
             _status = existing.Status;
             _startText = existing.StartTime?.ToString("HH\\:mm") ?? string.Empty;
@@ -51,8 +83,7 @@ public sealed class EntryEditorViewModel : ObservableObject
         }
         else
         {
-            _customRate = salary.HourlyRate;
-            Title = kind switch
+            Title = _kind switch
             {
                 EntryKind.Cycle => "Ajouter un cycle",
                 EntryKind.Period => "Ajouter une période",
@@ -60,17 +91,11 @@ public sealed class EntryEditorViewModel : ObservableObject
             };
         }
 
-        SaveCommand = new RelayCommand(_ => Save());
-        CancelCommand = new RelayCommand(_ => CloseRequested?.Invoke(false));
-        ComputeFromScheduleCommand = new RelayCommand(_ => ComputeFromSchedule());
-        AddCycleStepCommand = new RelayCommand(_ => AddCycleStep());
-        RemoveCycleStepCommand = new RelayCommand(p => RemoveCycleStep(p as CycleStepViewModel));
-        ApplyPresetCommand = new RelayCommand(p => ApplyPreset(p?.ToString() ?? ""));
-
         if (CycleSteps.Count == 0) ApplyPreset("2/2");
     }
 
     public string Title { get; }
+    public bool IsEditingCycle => _editingCycleId > 0;
 
     public sealed record StatusOption(DayStatus Value, string Label)
     {
@@ -144,7 +169,11 @@ public sealed class EntryEditorViewModel : ObservableObject
     }
 
     private bool _includeWeekends;
-    public bool IncludeWeekends { get => _includeWeekends; set => SetProperty(ref _includeWeekends, value); }
+    public bool IncludeWeekends
+    {
+        get => _includeWeekends;
+        set { if (SetProperty(ref _includeWeekends, value)) OnPropertyChanged(nameof(CyclePreviewText)); }
+    }
 
     // ---------- Cycle (rotation) ----------
 
@@ -155,12 +184,10 @@ public sealed class EntryEditorViewModel : ObservableObject
         get
         {
             if (CycleSteps.Count == 0) return "Ajoutez au moins un jour au cycle.";
-            var from = DateOnly.FromDateTime(_startDate.Date);
-            var to = DateOnly.FromDateTime(_endDate.Date);
-            if (to < from) (from, to) = (to, from);
-            int days = to.DayNumber - from.DayNumber + 1;
+            int days = BuildDates().Count;
             double repeats = days / (double)CycleSteps.Count;
-            return $"Cycle de {CycleSteps.Count} jour(s), répété {repeats:0.#} fois sur {days} jour(s).";
+            string we = _includeWeekends ? "" : ", week-ends exclus";
+            return $"Cycle de {CycleSteps.Count} jour(s), répété {repeats:0.#} fois sur {days} jour(s){we}.";
         }
     }
 
@@ -340,6 +367,10 @@ public sealed class EntryEditorViewModel : ObservableObject
                 Error = "Ajoutez au moins un jour au cycle.";
                 return;
             }
+            // Un cycle possède sa plage : on remplace toujours (pas de cumul).
+            _mode = ApplyMode.Replace;
+            if (_editingCycleId > 0)
+                _repo.DeleteRange(_originalCycleStart, _originalCycleEnd, notify: false);
             toSave = BuildCycleEntries(dates, rate, extraNote);
         }
         else
@@ -378,8 +409,34 @@ public sealed class EntryEditorViewModel : ObservableObject
         }
 
         _repo.SaveMany(toSave);
+        if (_kind == EntryKind.Cycle) PersistCyclePlan();
         LogSaved(dates);
         CloseRequested?.Invoke(true);
+    }
+
+    private void PersistCyclePlan()
+    {
+        var plan = new CyclePlan
+        {
+            Id = _editingCycleId,
+            StartDate = DateOnly.FromDateTime(_startDate.Date),
+            EndDate = DateOnly.FromDateTime(_endDate.Date),
+            IncludeWeekends = _includeWeekends,
+            HourlyRateOverride = UseCustomRate && CustomRate > 0 ? CustomRate : null,
+            Note = _note?.Trim() ?? string.Empty,
+            UpdatedAt = DateTime.Now,
+            Steps = CycleSteps.Select(s => new CyclePlanStep
+            {
+                Status = (int)s.Status,
+                Start = string.IsNullOrWhiteSpace(s.StartText) ? null : s.StartText,
+                End = string.IsNullOrWhiteSpace(s.EndText) ? null : s.EndText,
+                BreakMinutes = s.BreakMinutes,
+                NormalHours = s.NormalHours,
+                OvertimeHours = s.OvertimeHours
+            }).ToList()
+        };
+        if (plan.EndDate < plan.StartDate) (plan.StartDate, plan.EndDate) = (plan.EndDate, plan.StartDate);
+        _editingCycleId = _cycleRepo.Save(plan);
     }
 
     private List<DayEntry> BuildCycleEntries(List<DateOnly> dates, double? rate, string extraNote)
@@ -458,8 +515,9 @@ public sealed class EntryEditorViewModel : ObservableObject
             case EntryKind.Cycle:
                 var pattern = string.Join(" ", CycleSteps.Select(s => s.Status == DayStatus.Repos ? "R"
                     : s.Status == DayStatus.Conge ? "C" : "T"));
+                string verb = IsEditingCycle ? "Cycle modifié" : "Cycle";
                 _activityLog.Log(ActivityCategory.Periode,
-                    $"Cycle [{pattern}] du {dates[0]:dd/MM/yyyy} au {dates[^1]:dd/MM/yyyy} — {dates.Count} jour(s){modeText}");
+                    $"{verb} [{pattern}] du {dates[0]:dd/MM/yyyy} au {dates[^1]:dd/MM/yyyy} — {dates.Count} jour(s)");
                 break;
 
             case EntryKind.Period:
@@ -496,9 +554,10 @@ public sealed class EntryEditorViewModel : ObservableObject
 
         for (var d = from; d <= to; d = d.AddDays(1))
         {
-            // En mode cycle, les jours de repos font partie de la rotation : on garde tous les jours.
             bool weekend = d.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
-            if (_kind == EntryKind.Period && weekend && !IncludeWeekends) continue;
+            // Période comme cycle : week-ends exclus sauf si l'option est cochée.
+            // Un cycle qui exclut les week-ends n'avance donc que les jours ouvrés.
+            if (weekend && !IncludeWeekends) continue;
             result.Add(d);
         }
         return result;

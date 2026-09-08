@@ -34,14 +34,30 @@ public sealed class DayCellViewModel : ObservableObject
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasEntry));
             OnPropertyChanged(nameof(StatusKey));
+            OnPropertyChanged(nameof(BarColorKey));
             OnPropertyChanged(nameof(HoursLabel));
         }
     }
 
     public bool HasEntry => _entry is not null;
 
-    /// <summary>Clé utilisée par le convertisseur de couleur ("Travail", "Conge"… ou "None").</summary>
+    /// <summary>Clé du statut brut ("Travail", "Conge"… ou "None"), pour la pastille du panneau de détails.</summary>
     public string StatusKey => _entry?.Status.ToString() ?? "None";
+
+    /// <summary>
+    /// Clé de couleur du trait sous le jour : rouge si heures retirées, vert si heures sup.,
+    /// sinon la couleur du statut (repos = jaune, congé = violet, travail = bleu).
+    /// </summary>
+    public string BarColorKey
+    {
+        get
+        {
+            if (_entry is null) return "None";
+            if (_entry.OvertimeHours < 0) return "Retrait";
+            if (_entry.OvertimeHours > 0) return "HeuresSup";
+            return _entry.Status.ToString();
+        }
+    }
 
     public string HoursLabel =>
         _entry is { } e && e.TotalHours > 0 ? Fmt.H(e.TotalHours) : string.Empty;
