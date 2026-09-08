@@ -37,5 +37,6 @@ packages/
 exports/
 backups/
 
-## Installeur (sortie compilée)
+## Installeur (sortie compilée + fichier de version généré par build-installer.ps1)
 installer/Output/
+installer/version.generated.iss

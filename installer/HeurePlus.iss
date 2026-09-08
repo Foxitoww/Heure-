@@ -2,7 +2,15 @@
 ; Compilation : ISCC.exe installer\HeurePlus.iss   (voir installer\build-installer.ps1)
 
 #define AppName "Heure+"
-#define AppVersion "0.1.0"
+; La version est ecrite par build-installer.ps1 dans version.generated.iss
+; (lue depuis <Version> de HeurePlus.csproj). Valeur de secours 0.0.0 si on
+; compile l'iss a la main sans avoir lance le script.
+#ifexist "version.generated.iss"
+  #include "version.generated.iss"
+#endif
+#ifndef AppVersion
+  #define AppVersion "0.0.0"
+#endif
 #define AppPublisher "Heure+"
 #define AppExe "HeurePlus.exe"
 #define PublishDir "..\src\HeurePlus\bin\Release\net8.0-windows\win-x64\publish"
