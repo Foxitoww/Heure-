@@ -34,10 +34,33 @@
                                     Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                     CommandParameter="{Binding}">
                                 <StackPanel Width="132">
-                                    <Border Width="132" Height="132" CornerRadius="18"
-                                            Background="{Binding ColorHex, Converter={StaticResource HexToBrush}}">
-                                        <TextBlock Text="{Binding Initial}" FontSize="46" FontWeight="SemiBold"
-                                                   Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    <Border Width="132" Height="132" CornerRadius="18">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="{Binding ColorHex, Converter={StaticResource HexToBrush}}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsAddCard}" Value="True">
+                                                        <Setter Property="Background" Value="{DynamicResource Brush.SurfaceAlt}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource Brush.CardStroke}" />
+                                                        <Setter Property="BorderThickness" Value="1" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding Initial}" FontWeight="SemiBold"
+                                                   Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="FontSize" Value="46" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsAddCard}" Value="True">
+                                                            <Setter Property="FontSize" Value="34" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource Brush.TextTertiary}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </Border>
                                     <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}"
                                                HorizontalAlignment="Center" TextAlignment="Center" Margin="0,10,0,0"
@@ -49,8 +72,21 @@
                             </Button>
 
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                        Margin="0,4,4,0"
-                                        Visibility="{Binding DataContext.ManageMode, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVis}}">
+                                        Margin="0,4,4,0">
+                                <StackPanel.Style>
+                                    <Style TargetType="StackPanel">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding DataContext.ManageMode, RelativeSource={RelativeSource AncestorType=ItemsControl}}" Value="True" />
+                                                    <Condition Binding="{Binding IsAddCard}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </StackPanel.Style>
                                 <Button Style="{StaticResource RoundIconButton}" Width="26" Height="26"
                                         Content="&#xE70F;" ToolTip="Modifier"
                                         Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"

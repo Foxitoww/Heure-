@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json.Serialization;
 
 namespace HeurePlus.Models;
 
@@ -36,12 +37,14 @@ public sealed class Profile
     /// Faux uniquement pour un profil hérité de la version mono-utilisateur,
     /// tant que la personne ne s'est pas défini d'identifiants au 1er lancement.
     /// </summary>
+    [JsonIgnore]
     public bool HasCredentials =>
         !string.IsNullOrEmpty(Username)
         && !string.IsNullOrEmpty(PasswordHash)
         && !string.IsNullOrEmpty(PasswordSalt);
 
     /// <summary>Initiale affichée dans la pastille et les cartes de profil.</summary>
+    [JsonIgnore]
     public string Initial =>
         string.IsNullOrWhiteSpace(Name) ? "?" : Name.Trim()[..1].ToUpperInvariant();
 }

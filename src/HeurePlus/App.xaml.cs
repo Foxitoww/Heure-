@@ -145,6 +145,10 @@ public partial class App : Application
 
     private void SwitchProfile()
     {
+        // « Changer de profil » doit toujours ramener à l'écran de sélection,
+        // même si « rester connecté » était coché pour le profil courant.
+        _profiles.RememberedProfileId = null;
+
         _switching = true;
         var old = _mainWindow;
         _mainWindow = null;
