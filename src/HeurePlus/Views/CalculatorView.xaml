@@ -1,0 +1,107 @@
+<UserControl x:Class="HeurePlus.Views.CalculatorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:HeurePlus.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:CalculatorViewModel}"
+             Focusable="True" KeyDown="OnKeyDown">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="360" />
+            <ColumnDefinition Width="20" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="3" Text="Calculatrice" Style="{StaticResource PageTitle}" Margin="0,0,0,16" />
+
+        <!-- ======= Calculatrice classique ======= -->
+        <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <StackPanel>
+                <Border Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="12" Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="{Binding History}" Style="{StaticResource Muted}" HorizontalAlignment="Right"
+                                   TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Display}" HorizontalAlignment="Right" FontSize="34" FontWeight="Bold"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
+
+                <UniformGrid Rows="5" Columns="4" Margin="0,10,0,0">
+                    <Button Style="{StaticResource CalcKey}" Content="C" Command="{Binding KeyCommand}" CommandParameter="C" />
+                    <Button Style="{StaticResource CalcKey}" Content="⌫" Command="{Binding KeyCommand}" CommandParameter="back" />
+                    <Button Style="{StaticResource CalcKey}" Content="%" Command="{Binding KeyCommand}" CommandParameter="%" />
+                    <Button Style="{StaticResource CalcKeyAccent}" Content="÷" Command="{Binding KeyCommand}" CommandParameter="÷" />
+
+                    <Button Style="{StaticResource CalcKey}" Content="7" Command="{Binding KeyCommand}" CommandParameter="7" />
+                    <Button Style="{StaticResource CalcKey}" Content="8" Command="{Binding KeyCommand}" CommandParameter="8" />
+                    <Button Style="{StaticResource CalcKey}" Content="9" Command="{Binding KeyCommand}" CommandParameter="9" />
+                    <Button Style="{StaticResource CalcKeyAccent}" Content="×" Command="{Binding KeyCommand}" CommandParameter="×" />
+
+                    <Button Style="{StaticResource CalcKey}" Content="4" Command="{Binding KeyCommand}" CommandParameter="4" />
+                    <Button Style="{StaticResource CalcKey}" Content="5" Command="{Binding KeyCommand}" CommandParameter="5" />
+                    <Button Style="{StaticResource CalcKey}" Content="6" Command="{Binding KeyCommand}" CommandParameter="6" />
+                    <Button Style="{StaticResource CalcKeyAccent}" Content="−" Command="{Binding KeyCommand}" CommandParameter="-" />
+
+                    <Button Style="{StaticResource CalcKey}" Content="1" Command="{Binding KeyCommand}" CommandParameter="1" />
+                    <Button Style="{StaticResource CalcKey}" Content="2" Command="{Binding KeyCommand}" CommandParameter="2" />
+                    <Button Style="{StaticResource CalcKey}" Content="3" Command="{Binding KeyCommand}" CommandParameter="3" />
+                    <Button Style="{StaticResource CalcKeyAccent}" Content="+" Command="{Binding KeyCommand}" CommandParameter="+" />
+
+                    <Button Style="{StaticResource CalcKey}" Content="±" Command="{Binding KeyCommand}" CommandParameter="+/-" />
+                    <Button Style="{StaticResource CalcKey}" Content="0" Command="{Binding KeyCommand}" CommandParameter="0" />
+                    <Button Style="{StaticResource CalcKey}" Content="," Command="{Binding KeyCommand}" CommandParameter="," />
+                    <Button Style="{StaticResource CalcKeyAccent}" Content="=" Command="{Binding KeyCommand}" CommandParameter="=" />
+                </UniformGrid>
+            </StackPanel>
+        </Border>
+
+        <!-- ======= Conversions ======= -->
+        <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
+            <StackPanel>
+                <TextBlock Text="Conversions heures / minutes" Style="{StaticResource SectionTitle}" />
+
+                <TextBlock Text="Heures décimales → heures et minutes" Style="{StaticResource KpiLabel}" />
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,14">
+                    <TextBox Text="{Binding DecimalHoursInput, UpdateSourceTrigger=PropertyChanged}" Width="120" />
+                    <TextBlock Text="=" Margin="12,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding DecimalHoursResult}" VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold" />
+                </StackPanel>
+
+                <TextBlock Text="Heures et minutes → heures décimales" Style="{StaticResource KpiLabel}" />
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,14">
+                    <TextBox Text="{Binding HmHours, UpdateSourceTrigger=PropertyChanged}" Width="60" />
+                    <TextBlock Text="h" Margin="6,0,12,0" VerticalAlignment="Center" />
+                    <TextBox Text="{Binding HmMinutes, UpdateSourceTrigger=PropertyChanged}" Width="60" />
+                    <TextBlock Text="min  =" Margin="6,0,12,0" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding HmResult}" VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold" />
+                </StackPanel>
+
+                <Rectangle Height="1" Fill="{DynamicResource Brush.Border}" Margin="0,4,0,14" />
+
+                <TextBlock Text="Addition / soustraction de durées (hh:mm)" Style="{StaticResource KpiLabel}" />
+                <StackPanel Orientation="Horizontal" Margin="0,4,0,10">
+                    <TextBox Text="{Binding DurationA, UpdateSourceTrigger=PropertyChanged}" Width="90" />
+                    <RadioButton Content="+" GroupName="DurOp" Margin="12,0,0,0" VerticalAlignment="Center"
+                                 IsChecked="{Binding DurationAdd}" />
+                    <RadioButton Content="−" GroupName="DurOp" Margin="10,0,0,0" VerticalAlignment="Center"
+                                 IsChecked="{Binding DurationAdd, Converter={StaticResource InvBool}}" />
+                    <TextBox Text="{Binding DurationB, UpdateSourceTrigger=PropertyChanged}" Width="90" Margin="12,0,0,0" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Résultat :" Margin="0,0,10,0" VerticalAlignment="Center" Style="{StaticResource Muted}" />
+                    <TextBlock Text="{Binding DurationResult}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <TextBlock Style="{StaticResource Muted}" Margin="0,16,0,0" TextWrapping="Wrap"
+                           Text="Astuce : la calculatrice répond aussi au clavier (chiffres, + − * / , Entrée, Retour arrière, Échap)." />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

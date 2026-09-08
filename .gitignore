@@ -1,0 +1,38 @@
+## .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+build/
+bld/
+[Oo]ut/
+[Oo]bj/
+[Bb]in/
+
+## Rider
+.idea/
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/build/
+
+## Local runtime data (the app writes its DB to %LOCALAPPDATA%, but just in case)
+*.db
+*.db-shm
+*.db-wal
+exports/
+backups/

@@ -1,0 +1,135 @@
+<Window x:Class="HeurePlus.Views.EntryEditorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:HeurePlus.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:EntryEditorViewModel}"
+        Title="{Binding Title}" Height="640" Width="520"
+        Icon="/HeurePlus;component/heureplus.ico"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        FontFamily="Segoe UI" FontSize="13" Language="fr-FR"
+        Background="{DynamicResource Brush.Bg}"
+        TextElement.Foreground="{DynamicResource Brush.Text}">
+
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="{Binding Title}" Style="{StaticResource PageTitle}" Margin="0,0,0,16" />
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+
+                <!-- Type de saisie -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                    <RadioButton Content="Une journée" GroupName="Kind" Margin="0,0,18,0"
+                                 IsChecked="{Binding IsPeriod, Converter={StaticResource InvBool}}" />
+                    <RadioButton Content="Une période" GroupName="Kind"
+                                 IsChecked="{Binding IsPeriod}" />
+                </StackPanel>
+
+                <!-- Jour unique -->
+                <StackPanel Visibility="{Binding IsSingleDay, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="Date" Style="{StaticResource KpiLabel}" />
+                    <DatePicker SelectedDate="{Binding Date}" Margin="0,2,0,12" />
+                </StackPanel>
+
+                <!-- Période -->
+                <StackPanel Visibility="{Binding IsPeriod, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Du" Style="{StaticResource KpiLabel}" />
+                            <DatePicker SelectedDate="{Binding StartDate}" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Au" Style="{StaticResource KpiLabel}" />
+                            <DatePicker SelectedDate="{Binding EndDate}" Margin="0,2,0,0" />
+                        </StackPanel>
+                    </Grid>
+                    <CheckBox Content="Inclure les samedis et dimanches" IsChecked="{Binding IncludeWeekends}" Margin="0,10,0,0" />
+                    <CheckBox Content="Écraser les saisies déjà présentes" IsChecked="{Binding OverwriteExisting}" />
+                    <Rectangle Height="1" Fill="{DynamicResource Brush.Border}" Margin="0,12" />
+                </StackPanel>
+
+                <!-- Statut -->
+                <TextBlock Text="Statut" Style="{StaticResource KpiLabel}" />
+                <ComboBox ItemsSource="{Binding StatusOptions}" SelectedValuePath="Value" DisplayMemberPath="Label"
+                          SelectedValue="{Binding Status}" Margin="0,2,0,12" />
+
+                <!-- Horaires -->
+                <Grid IsEnabled="{Binding HoursEnabled}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Début" Style="{StaticResource KpiLabel}" />
+                        <TextBox Text="{Binding StartText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Fin" Style="{StaticResource KpiLabel}" />
+                        <TextBox Text="{Binding EndText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="4">
+                        <TextBlock Text="Pause (min)" Style="{StaticResource KpiLabel}" />
+                        <TextBox Text="{Binding BreakMinutes}" />
+                    </StackPanel>
+                </Grid>
+
+                <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="0,10,0,0"
+                        IsEnabled="{Binding HoursEnabled}"
+                        Command="{Binding ComputeFromScheduleCommand}"
+                        Content="Calculer les heures depuis les horaires" />
+
+                <Grid Margin="0,12,0,0" IsEnabled="{Binding HoursEnabled}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Heures normales" Style="{StaticResource KpiLabel}" />
+                        <TextBox Text="{Binding NormalHours}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Heures supplémentaires" Style="{StaticResource KpiLabel}" />
+                        <TextBox Text="{Binding OvertimeHours}" />
+                    </StackPanel>
+                </Grid>
+
+                <!-- Taux spécifique -->
+                <CheckBox Content="Taux horaire spécifique pour cette saisie" IsChecked="{Binding UseCustomRate}" Margin="0,14,0,0" />
+                <TextBox Text="{Binding CustomRate}" IsEnabled="{Binding UseCustomRate}" Width="140" HorizontalAlignment="Left" Margin="0,2,0,0" />
+
+                <!-- Note -->
+                <TextBlock Text="Note" Style="{StaticResource KpiLabel}" Margin="0,14,0,0" />
+                <TextBox Text="{Binding Note}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"
+                         VerticalScrollBarVisibility="Auto" />
+
+                <Border Margin="0,14,0,0" CornerRadius="8" Padding="10" Background="#22EF4444"
+                        Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="{Binding Error}" Foreground="#EF4444" TextWrapping="Wrap" />
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Style="{StaticResource GhostButton}" Content="Annuler" Command="{Binding CancelCommand}" />
+            <Button Style="{StaticResource AccentButton}" Content="Enregistrer" Margin="10,0,0,0"
+                    Command="{Binding SaveCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>

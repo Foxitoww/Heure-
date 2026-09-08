@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>HeurePlus</RootNamespace>
+    <AssemblyName>HeurePlus</AssemblyName>
+    <Version>0.1.0</Version>
+    <Product>Heure+</Product>
+    <Authors>Heure+</Authors>
+    <AssemblyTitle>Heure+</AssemblyTitle>
+    <NeutralLanguage>fr-FR</NeutralLanguage>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>heureplus.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Aussi embarqué comme ressource pour l'icône de fenêtre / barre des tâches -->
+    <Resource Include="heureplus.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Base de données locale SQLite (le natif e_sqlite3 est embarqué, aucune install requise) -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
+    <!-- Export Excel (.xlsx) — 100% managé, hors ligne -->
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
+    <!-- Export PDF — police embarquée, aucune dépendance système -->
+    <PackageReference Include="QuestPDF" Version="2024.10.3" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,138 @@
+<UserControl x:Class="HeurePlus.Views.CalendarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:HeurePlus.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:CalendarViewModel}">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ======= Barre d'outils ======= -->
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Style="{StaticResource RoundIconButton}" Command="{Binding PrevMonthCommand}" Content="‹" />
+                <TextBlock Text="{Binding MonthLabel}" Style="{StaticResource PageTitle}"
+                           VerticalAlignment="Center" Margin="14,0" MinWidth="220" />
+                <Button Style="{StaticResource RoundIconButton}" Command="{Binding NextMonthCommand}" Content="›" />
+                <Button Style="{StaticResource GhostButton}" Command="{Binding TodayCommand}"
+                        Content="Aujourd'hui" Margin="12,0,0,0" />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Style="{StaticResource AccentButton}" Command="{Binding AddEntryCommand}"
+                        Content="＋  Ajouter une journée" />
+                <Button Style="{StaticResource GhostButton}" Command="{Binding AddPeriodCommand}"
+                        Content="Ajouter une période" Margin="10,0,0,0" />
+            </StackPanel>
+        </Grid>
+
+        <!-- ======= En-têtes des jours ======= -->
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding WeekdayHeaders}" Margin="0,0,0,6">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Columns="7" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" HorizontalAlignment="Center"
+                               FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- ======= Grille du mois ======= -->
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="8">
+            <ItemsControl ItemsSource="{Binding Days}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Rows="6" Columns="7" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Style="{StaticResource DayCellButton}"
+                                Command="{Binding DataContext.SelectDayCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                CommandParameter="{Binding}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+
+        <!-- ======= Panneau de détails ======= -->
+        <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,14,0,0" DataContext="{Binding Details}">
+            <Grid>
+                <!-- Rien de sélectionné -->
+                <TextBlock Text="Sélectionnez un jour dans le calendrier pour voir et gérer ses détails."
+                           Style="{StaticResource Muted}" FontSize="13"
+                           Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}, ConverterParameter=invert}" />
+
+                <StackPanel Visibility="{Binding HasSelection, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <StackPanel>
+                            <TextBlock Text="{Binding DateLabel}" Style="{StaticResource SectionTitle}" Margin="0" />
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0"
+                                        Visibility="{Binding HasEntry, Converter={StaticResource BoolToVis}}">
+                                <Border CornerRadius="8" Padding="10,4"
+                                        Background="{Binding StatusKey, Converter={StaticResource StatusToBrush}}">
+                                    <TextBlock Text="{Binding StatusLabel}" Foreground="White" FontWeight="SemiBold" FontSize="12" />
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                            <Button Style="{StaticResource AccentButton}" Content="Modifier"
+                                    Command="{Binding DataContext.EditSelectedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                            <Button Style="{StaticResource GhostButton}" Content="Supprimer" Margin="8,0,0,0"
+                                    Command="{Binding DataContext.DeleteSelectedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Détail d'une saisie existante -->
+                    <Grid Margin="0,14,0,0" Visibility="{Binding HasEntry, Converter={StaticResource BoolToVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Heures" Style="{StaticResource KpiLabel}" />
+                            <TextBlock Text="{Binding HoursLabel}" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Horaire" Style="{StaticResource KpiLabel}" />
+                            <TextBlock Text="{Binding ScheduleLabel}" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="Taux horaire" Style="{StaticResource KpiLabel}" />
+                            <TextBlock Text="{Binding RateLabel}" FontSize="14" FontWeight="SemiBold" />
+                        </StackPanel>
+                    </Grid>
+
+                    <StackPanel Margin="0,12,0,0"
+                                Visibility="{Binding HasNote, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Note" Style="{StaticResource KpiLabel}" />
+                        <TextBlock Text="{Binding Note}" TextWrapping="Wrap" FontSize="13" />
+                    </StackPanel>
+
+                    <!-- Jour sélectionné sans saisie -->
+                    <StackPanel Margin="0,12,0,0"
+                                Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}">
+                        <TextBlock Text="Aucune saisie pour ce jour." Style="{StaticResource Muted}" FontSize="13" />
+                        <Button Style="{StaticResource AccentButton}" Content="＋  Ajouter une saisie" Margin="0,10,0,0"
+                                HorizontalAlignment="Left"
+                                Command="{Binding DataContext.EditSelectedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
