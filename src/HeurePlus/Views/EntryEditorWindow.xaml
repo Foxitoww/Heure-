@@ -93,7 +93,7 @@
                                         </Grid>
                                         <Grid Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="128" />
+                                                <ColumnDefinition Width="118" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
                                             <ComboBox Grid.Column="0" VerticalAlignment="Top"
@@ -107,25 +107,25 @@
                                                         IsEnabled="{Binding HoursEnabled}">
                                                 <StackPanel Margin="0,0,7,0">
                                                     <TextBlock Text="Début" Style="{StaticResource Caption}" />
-                                                    <TextBox Text="{Binding StartText, UpdateSourceTrigger=LostFocus}" Width="62" />
+                                                    <TextBox Text="{Binding StartText, UpdateSourceTrigger=LostFocus}" Width="74" Padding="6,0" />
                                                 </StackPanel>
                                                 <StackPanel Margin="0,0,7,0">
                                                     <TextBlock Text="Fin" Style="{StaticResource Caption}" />
-                                                    <TextBox Text="{Binding EndText, UpdateSourceTrigger=LostFocus}" Width="62" />
+                                                    <TextBox Text="{Binding EndText, UpdateSourceTrigger=LostFocus}" Width="74" Padding="6,0" />
                                                 </StackPanel>
                                                 <StackPanel Margin="0,0,7,0">
                                                     <TextBlock Text="Pause" Style="{StaticResource Caption}" />
-                                                    <TextBox Text="{Binding BreakMinutes, UpdateSourceTrigger=LostFocus}" Width="48" />
+                                                    <TextBox Text="{Binding BreakMinutes, UpdateSourceTrigger=LostFocus}" Width="50" Padding="6,0" />
                                                 </StackPanel>
                                                 <StackPanel>
                                                     <TextBlock Text="Sup / retrait" Style="{StaticResource Caption}" />
-                                                    <TextBox Text="{Binding OvertimeHours}" Width="58" />
+                                                    <TextBox Text="{Binding OvertimeHours}" Width="62" Padding="6,0" />
                                                 </StackPanel>
                                             </StackPanel>
                                         </Grid>
                                         <TextBlock Margin="0,6,0,0" Style="{StaticResource Caption}"
                                                    Visibility="{Binding HoursEnabled, Converter={StaticResource BoolToVis}}"
-                                                   Text="{Binding TotalHours, StringFormat=Total du jour : {0} h}" />
+                                                   Text="{Binding TotalHoursText}" />
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>

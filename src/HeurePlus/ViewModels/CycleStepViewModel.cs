@@ -49,7 +49,12 @@ public sealed class CycleStepViewModel : ObservableObject
     public DayStatus Status
     {
         get => _status;
-        set { if (SetProperty(ref _status, value)) OnPropertyChanged(nameof(HoursEnabled)); }
+        set
+        {
+            if (!SetProperty(ref _status, value)) return;
+            OnPropertyChanged(nameof(HoursEnabled));
+            OnPropertyChanged(nameof(TotalHoursText));
+        }
     }
 
     public bool HoursEnabled => _status.IsWorking();
@@ -64,12 +69,22 @@ public sealed class CycleStepViewModel : ObservableObject
     public int BreakMinutes { get => _breakMinutes; set { if (SetProperty(ref _breakMinutes, value)) ComputeFromSchedule(); } }
 
     private double _normalHours;
-    public double NormalHours { get => _normalHours; set => SetProperty(ref _normalHours, value); }
+    public double NormalHours
+    {
+        get => _normalHours;
+        set { if (SetProperty(ref _normalHours, value)) OnPropertyChanged(nameof(TotalHoursText)); }
+    }
 
     private double _overtimeHours;
-    public double OvertimeHours { get => _overtimeHours; set => SetProperty(ref _overtimeHours, value); }
+    public double OvertimeHours
+    {
+        get => _overtimeHours;
+        set { if (SetProperty(ref _overtimeHours, value)) OnPropertyChanged(nameof(TotalHoursText)); }
+    }
 
-    public double TotalHours => HoursEnabled ? Math.Max(0, NormalHours) + Math.Max(0, OvertimeHours) : 0;
+    public double TotalHours => HoursEnabled ? Math.Max(0, NormalHours) + OvertimeHours : 0;
+
+    public string TotalHoursText => "Total du jour : " + Fmt.H(TotalHours);
 
     private void ComputeFromSchedule()
     {
