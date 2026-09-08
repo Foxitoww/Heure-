@@ -15,6 +15,7 @@
     <conv:StatusToBrushConverter x:Key="StatusToBrush" />
     <conv:MultiplyConverter x:Key="Multiply" />
     <conv:IndexToVisibilityConverter x:Key="IndexToVis" />
+    <conv:HexToBrushConverter x:Key="HexToBrush" />
 
     <!-- ================= Polices ================= -->
     <FontFamily x:Key="Font.Text">Segoe UI Variable Text, Segoe UI</FontFamily>

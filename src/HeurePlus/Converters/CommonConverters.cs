@@ -91,6 +91,35 @@ public sealed class IndexToVisibilityConverter : IValueConverter
         => throw new NotSupportedException();
 }
 
+/// <summary>Chaîne "#RRGGBB" -&gt; SolidColorBrush (avec cache). Fallback : gris.</summary>
+public sealed class HexToBrushConverter : IValueConverter
+{
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Brush> Cache = new();
+
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is not string hex || string.IsNullOrWhiteSpace(hex))
+            return Brushes.Gray;
+
+        return Cache.GetOrAdd(hex, static h =>
+        {
+            try
+            {
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(h));
+                brush.Freeze();
+                return brush;
+            }
+            catch
+            {
+                return Brushes.Gray;
+            }
+        });
+    }
+
+    public object ConvertBack(object value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotSupportedException();
+}
+
 /// <summary>Multiplie une valeur numérique par ConverterParameter (double).</summary>
 public sealed class MultiplyConverter : IValueConverter
 {
