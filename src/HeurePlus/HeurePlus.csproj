@@ -11,7 +11,7 @@
     <AssemblyName>HeurePlus</AssemblyName>
     <!-- Version unique de l'application : lue par l'app (À propos / mise à jour)
          ET par l'installeur (build-installer.ps1 la passe à Inno Setup). -->
-    <Version>0.3.0</Version>
+    <Version>0.4.0</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Product>Heure+</Product>
     <Authors>Heure+</Authors>
