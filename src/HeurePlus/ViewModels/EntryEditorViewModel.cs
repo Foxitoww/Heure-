@@ -11,18 +11,21 @@ namespace HeurePlus.ViewModels;
 public sealed class EntryEditorViewModel : ObservableObject
 {
     private readonly DayEntryRepository _repo;
+    private readonly ActivityLogRepository _activityLog;
     private readonly SalarySettings _salary;
 
     public event Action<bool>? CloseRequested;
 
     public EntryEditorViewModel(
         DayEntryRepository repo,
+        ActivityLogRepository activityLog,
         SalarySettings salary,
         DateOnly date,
         DayEntry? existing,
         bool periodMode)
     {
         _repo = repo;
+        _activityLog = activityLog;
         _salary = salary;
 
         _date = date.ToDateTime(default);
@@ -89,8 +92,54 @@ public sealed class EntryEditorViewModel : ObservableObject
     private bool _includeWeekends;
     public bool IncludeWeekends { get => _includeWeekends; set => SetProperty(ref _includeWeekends, value); }
 
-    private bool _overwriteExisting = true;
-    public bool OverwriteExisting { get => _overwriteExisting; set => SetProperty(ref _overwriteExisting, value); }
+    // Comment appliquer la saisie aux jours qui possèdent déjà une entrée.
+    private enum ApplyMode { Replace, Add, Skip }
+    private ApplyMode _mode = ApplyMode.Replace;
+
+    public bool ModeReplace
+    {
+        get => _mode == ApplyMode.Replace;
+        set { if (value && _mode != ApplyMode.Replace) SetMode(ApplyMode.Replace); }
+    }
+
+    public bool ModeAdd
+    {
+        get => _mode == ApplyMode.Add;
+        set
+        {
+            if (!value || _mode == ApplyMode.Add) return;
+            SetMode(ApplyMode.Add);
+            // Les champs deviennent un « delta » à ajouter : on repart de zéro.
+            _normalHours = 0;
+            _overtimeHours = 0;
+            _note = string.Empty;
+            _startText = string.Empty;
+            _endText = string.Empty;
+            OnPropertyChanged(nameof(NormalHours));
+            OnPropertyChanged(nameof(OvertimeHours));
+            OnPropertyChanged(nameof(Note));
+            OnPropertyChanged(nameof(StartText));
+            OnPropertyChanged(nameof(EndText));
+            Status = DayStatus.HeuresSup;
+        }
+    }
+
+    public bool ModeSkip
+    {
+        get => _mode == ApplyMode.Skip;
+        set { if (value && _mode != ApplyMode.Skip) SetMode(ApplyMode.Skip); }
+    }
+
+    public bool IsAddMode => _mode == ApplyMode.Add;
+
+    private void SetMode(ApplyMode mode)
+    {
+        _mode = mode;
+        OnPropertyChanged(nameof(ModeReplace));
+        OnPropertyChanged(nameof(ModeAdd));
+        OnPropertyChanged(nameof(ModeSkip));
+        OnPropertyChanged(nameof(IsAddMode));
+    }
 
     private DayStatus _status = DayStatus.Travail;
     public DayStatus Status
@@ -183,34 +232,91 @@ public sealed class EntryEditorViewModel : ObservableObject
         double overtime = HoursEnabled ? Math.Max(0, OvertimeHours) : 0;
         double? rate = UseCustomRate && CustomRate > 0 ? CustomRate : null;
 
+        string extraNote = _note?.Trim() ?? string.Empty;
+
         var toSave = new List<DayEntry>();
         foreach (var d in dates)
         {
-            if (!OverwriteExisting && _repo.Get(d) is not null) continue;
+            var existing = _repo.Get(d);
 
-            toSave.Add(new DayEntry
+            if (existing is not null && _mode == ApplyMode.Skip)
+                continue;
+
+            if (existing is not null && _mode == ApplyMode.Add)
             {
-                Date = d,
-                Status = _status,
-                StartTime = HoursEnabled ? start : null,
-                EndTime = HoursEnabled ? end : null,
-                BreakMinutes = HoursEnabled ? Math.Max(0, _breakMinutes) : 0,
-                NormalHours = normal,
-                OvertimeHours = overtime,
-                HourlyRateOverride = rate,
-                Note = _note?.Trim() ?? string.Empty,
-                UpdatedAt = DateTime.Now
-            });
+                var merged = existing.Clone();
+                merged.NormalHours = Math.Max(0, existing.NormalHours + normal);
+                merged.OvertimeHours = Math.Max(0, existing.OvertimeHours + overtime);
+                // Ajouter des heures sup à un jour de travail ne change pas son statut.
+                if (!existing.Status.IsWorking()) merged.Status = _status;
+                merged.StartTime ??= (HoursEnabled ? start : null);
+                merged.EndTime ??= (HoursEnabled ? end : null);
+                if (merged.BreakMinutes == 0 && HoursEnabled && _breakMinutes > 0)
+                    merged.BreakMinutes = _breakMinutes;
+                if (rate is not null) merged.HourlyRateOverride = rate;
+                if (extraNote.Length > 0)
+                    merged.Note = string.IsNullOrWhiteSpace(existing.Note)
+                        ? extraNote
+                        : existing.Note + " · " + extraNote;
+                merged.UpdatedAt = DateTime.Now;
+                toSave.Add(merged);
+            }
+            else
+            {
+                toSave.Add(new DayEntry
+                {
+                    Date = d,
+                    Status = _status,
+                    StartTime = HoursEnabled ? start : null,
+                    EndTime = HoursEnabled ? end : null,
+                    BreakMinutes = HoursEnabled ? Math.Max(0, _breakMinutes) : 0,
+                    NormalHours = normal,
+                    OvertimeHours = overtime,
+                    HourlyRateOverride = rate,
+                    Note = extraNote,
+                    UpdatedAt = DateTime.Now
+                });
+            }
         }
 
         if (toSave.Count == 0)
         {
-            Error = "Toutes les dates existent déjà et « écraser » est décoché.";
+            Error = _mode == ApplyMode.Skip
+                ? "Tous les jours de la période sont déjà remplis."
+                : "Aucune date à enregistrer.";
             return;
         }
 
         _repo.SaveMany(toSave);
+        LogSaved(dates, normal, overtime);
         CloseRequested?.Invoke(true);
+    }
+
+    private void LogSaved(List<DateOnly> dates, double normal, double overtime)
+    {
+        string hours = _status.IsWorking()
+            ? $" — {Fmt.H(normal)} + {Fmt.H(overtime)} sup."
+            : string.Empty;
+
+        string modeText = _mode switch
+        {
+            ApplyMode.Add => " · cumul des heures",
+            ApplyMode.Skip => " · jours vides seulement",
+            _ => string.Empty
+        };
+
+        if (IsPeriod)
+        {
+            var min = dates[0];
+            var max = dates[^1];
+            _activityLog.Log(ActivityCategory.Periode,
+                $"Période du {min:dd/MM/yyyy} au {max:dd/MM/yyyy} — {dates.Count} jour(s) · {_status.Label()}{hours}{modeText}");
+        }
+        else
+        {
+            _activityLog.Log(ActivityCategory.Saisie,
+                $"{dates[0]:dd/MM/yyyy} · {_status.Label()}{hours}{modeText}");
+        }
     }
 
     private List<DateOnly> BuildDates()

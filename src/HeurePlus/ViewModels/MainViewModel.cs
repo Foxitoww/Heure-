@@ -9,12 +9,14 @@ public sealed class MainViewModel : ObservableObject
         SalaryViewModel salary,
         CalculatorViewModel calculator,
         DashboardViewModel dashboard,
+        HistoryViewModel history,
         SettingsViewModel settings)
     {
         Calendar = calendar;
         Salary = salary;
         Calculator = calculator;
         Dashboard = dashboard;
+        History = history;
         Settings = settings;
     }
 
@@ -22,6 +24,7 @@ public sealed class MainViewModel : ObservableObject
     public SalaryViewModel Salary { get; }
     public CalculatorViewModel Calculator { get; }
     public DashboardViewModel Dashboard { get; }
+    public HistoryViewModel History { get; }
     public SettingsViewModel Settings { get; }
 
     private int _selectedTab;

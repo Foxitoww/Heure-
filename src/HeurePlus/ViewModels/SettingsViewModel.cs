@@ -17,6 +17,7 @@ public sealed class SettingsViewModel : ObservableObject
     private readonly ThemeManager _theme;
     private readonly DialogService _dialogs;
     private readonly DayEntryRepository _entries;
+    private readonly ActivityLogRepository _activityLog;
     private readonly AppEvents _events;
     private readonly AppDatabase _db;
 
@@ -28,6 +29,7 @@ public sealed class SettingsViewModel : ObservableObject
         ThemeManager theme,
         DialogService dialogs,
         DayEntryRepository entries,
+        ActivityLogRepository activityLog,
         AppEvents events,
         AppDatabase db)
     {
@@ -36,6 +38,7 @@ public sealed class SettingsViewModel : ObservableObject
         _theme = theme;
         _dialogs = dialogs;
         _entries = entries;
+        _activityLog = activityLog;
         _events = events;
         _db = db;
 
@@ -71,6 +74,7 @@ public sealed class SettingsViewModel : ObservableObject
             _app.Theme = value ? AppTheme.Dark : AppTheme.Light;
             _settingsRepo.SaveApp(_app);
             StatusMessage = value ? "Thème sombre activé." : "Thème clair activé.";
+            _activityLog.Log(ActivityCategory.Reglages, value ? "Thème sombre activé" : "Thème clair activé");
         }
     }
 
@@ -100,6 +104,7 @@ public sealed class SettingsViewModel : ObservableObject
         salary.Currency = string.IsNullOrWhiteSpace(Currency) ? "€" : Currency.Trim();
         _settingsRepo.SaveSalary(salary);
         StatusMessage = "Devise enregistrée.";
+        _activityLog.Log(ActivityCategory.Reglages, $"Devise changée en « {salary.Currency} »");
     });
 
     // ---------- Sauvegarde ----------
@@ -121,6 +126,7 @@ public sealed class SettingsViewModel : ObservableObject
             _settingsRepo.SaveApp(_app);
             LastBackupText = $"Dernière sauvegarde : {path}";
             StatusMessage = "Sauvegarde créée.";
+            _activityLog.Log(ActivityCategory.Sauvegarde, $"Sauvegarde créée — {Path.GetFileName(path)}");
         }
         catch (Exception ex)
         {
@@ -142,6 +148,7 @@ public sealed class SettingsViewModel : ObservableObject
         try
         {
             _backup.Restore(file);
+            _activityLog.Log(ActivityCategory.Sauvegarde, $"Sauvegarde restaurée — {Path.GetFileName(file)}");
             MessageBox.Show("Restauration effectuée. L'application va se fermer, relancez-la.",
                 "Heure+", MessageBoxButton.OK, MessageBoxImage.Information);
             Application.Current.Shutdown();
@@ -185,6 +192,9 @@ public sealed class SettingsViewModel : ObservableObject
             _app.LastExportFolder = Path.GetDirectoryName(path);
             _settingsRepo.SaveApp(_app);
             StatusMessage = $"Export réussi : {path}";
+            _activityLog.Log(ActivityCategory.Export,
+                $"Export {(pdf ? "PDF" : "Excel")} — {Fmt.Fr.TextInfo.ToTitleCase(new DateTime(year, month, 1).ToString("MMMM yyyy", Fmt.Fr))}"
+                + $" · total estimé {Fmt.Money(stats.Salary.Total, salary.Currency)}");
 
             if (MessageBox.Show("Export terminé. Ouvrir le fichier ?", "Heure+",
                     MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)

@@ -80,6 +80,12 @@
                     </ListBoxItem>
                     <ListBoxItem>
                         <StackPanel Orientation="Horizontal">
+                            <TextBlock FontFamily="{StaticResource Font.Icons}" Text="&#xE81C;" FontSize="16" Width="22" />
+                            <TextBlock Text="Historique" Margin="12,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <StackPanel Orientation="Horizontal">
                             <TextBlock FontFamily="{StaticResource Font.Icons}" Text="&#xE713;" FontSize="16" Width="22" />
                             <TextBlock Text="Réglages" Margin="12,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
@@ -98,8 +104,10 @@
                                   Visibility="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource IndexToVis}, ConverterParameter=2}" />
             <views:DashboardView DataContext="{Binding Dashboard}"
                                  Visibility="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource IndexToVis}, ConverterParameter=3}" />
+            <views:HistoryView DataContext="{Binding History}"
+                               Visibility="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource IndexToVis}, ConverterParameter=4}" />
             <views:SettingsView DataContext="{Binding Settings}"
-                                Visibility="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource IndexToVis}, ConverterParameter=4}" />
+                                Visibility="{Binding DataContext.SelectedTab, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource IndexToVis}, ConverterParameter=5}" />
         </Grid>
     </Grid>
 </Window>

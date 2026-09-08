@@ -15,6 +15,7 @@ public sealed class CalendarViewModel : ObservableObject
 
     private readonly DayEntryRepository _repo;
     private readonly SettingsRepository _settingsRepo;
+    private readonly ActivityLogRepository _activityLog;
     private readonly AppEvents _events;
     private readonly Func<EntryEditorViewModel, bool?> _showEditor;
 
@@ -23,11 +24,13 @@ public sealed class CalendarViewModel : ObservableObject
     public CalendarViewModel(
         DayEntryRepository repo,
         SettingsRepository settingsRepo,
+        ActivityLogRepository activityLog,
         AppEvents events,
         Func<EntryEditorViewModel, bool?> showEditor)
     {
         _repo = repo;
         _settingsRepo = settingsRepo;
+        _activityLog = activityLog;
         _events = events;
         _showEditor = showEditor;
 
@@ -174,7 +177,7 @@ public sealed class CalendarViewModel : ObservableObject
         var existing = !periodMode && SelectedDay is not null ? _repo.Get(SelectedDay.Date) : null;
         var salary = _settingsRepo.LoadSalary();
 
-        var editor = new EntryEditorViewModel(_repo, salary, anchor, existing, periodMode);
+        var editor = new EntryEditorViewModel(_repo, _activityLog, salary, anchor, existing, periodMode);
         var result = _showEditor(editor);
 
         if (result == true)
@@ -197,6 +200,8 @@ public sealed class CalendarViewModel : ObservableObject
 
         if (answer != MessageBoxResult.Yes) return;
 
-        _repo.Delete(SelectedDay.Date);
+        var date = SelectedDay.Date;
+        _repo.Delete(date);
+        _activityLog.Log(Models.ActivityCategory.Suppression, $"Saisie supprimée — {date:dd/MM/yyyy}");
     }
 }

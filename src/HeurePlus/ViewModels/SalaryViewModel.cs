@@ -12,12 +12,15 @@ public sealed class SalaryViewModel : ObservableObject
 {
     private readonly DayEntryRepository _entries;
     private readonly SettingsRepository _settingsRepo;
+    private readonly ActivityLogRepository _activityLog;
     private readonly AppEvents _events;
 
-    public SalaryViewModel(DayEntryRepository entries, SettingsRepository settingsRepo, AppEvents events)
+    public SalaryViewModel(DayEntryRepository entries, SettingsRepository settingsRepo,
+        ActivityLogRepository activityLog, AppEvents events)
     {
         _entries = entries;
         _settingsRepo = settingsRepo;
+        _activityLog = activityLog;
         _events = events;
 
         LoadFromSettings(_settingsRepo.LoadSalary());
@@ -121,8 +124,12 @@ public sealed class SalaryViewModel : ObservableObject
 
     private void Save()
     {
-        _settingsRepo.SaveSalary(CurrentSettings());
+        var settings = CurrentSettings();
+        _settingsRepo.SaveSalary(settings);
         StatusMessage = "Réglages de salaire enregistrés.";
+        _activityLog.Log(Models.ActivityCategory.Salaire,
+            $"Réglages de salaire — taux {Fmt.Money(settings.HourlyRate, settings.Currency)}/h · "
+            + $"heures sup. x{settings.OvertimeMultiplier.ToString("0.##", Fmt.Fr)}");
     }
 
     private void Recompute()

@@ -55,6 +55,15 @@ public sealed class AppDatabase
                 Key   TEXT PRIMARY KEY,
                 Value TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS ActivityLog (
+                Id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                Timestamp   TEXT    NOT NULL,
+                Category    INTEGER NOT NULL,
+                Description TEXT    NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_ActivityLog_Timestamp ON ActivityLog(Timestamp DESC);
             """;
         command.ExecuteNonQuery();
     }
