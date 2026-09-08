@@ -124,9 +124,8 @@ public static class PdfExportService
                         double totalNormal = 0, totalOt = 0, totalPay = 0;
                         foreach (var e in ordered)
                         {
-                            double rate = e.HourlyRateOverride is > 0 ? e.HourlyRateOverride!.Value : salary.HourlyRate;
                             bool working = e.Status.IsWorking();
-                            double pay = working ? e.NormalHours * rate + e.OvertimeHours * rate * salary.OvertimeMultiplier : 0;
+                            double pay = SalaryCalculator.DayPay(e, salary);
                             totalNormal += e.NormalHours;
                             totalOt += e.OvertimeHours;
                             totalPay += pay;

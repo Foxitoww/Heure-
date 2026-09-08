@@ -41,9 +41,10 @@ public sealed class CalendarViewModel : ObservableObject
         NextMonthCommand = new RelayCommand(_ => MoveMonth(+1));
         TodayCommand = new RelayCommand(_ => GoToToday());
         SelectDayCommand = new RelayCommand(p => { if (p is DayCellViewModel c) SelectedDay = c; });
-        AddEntryCommand = new RelayCommand(_ => OpenEditor(periodMode: false));
-        AddPeriodCommand = new RelayCommand(_ => OpenEditor(periodMode: true));
-        EditSelectedCommand = new RelayCommand(_ => OpenEditor(periodMode: false), _ => SelectedDay is not null);
+        AddEntryCommand = new RelayCommand(_ => OpenEditor(EntryKind.Day));
+        AddPeriodCommand = new RelayCommand(_ => OpenEditor(EntryKind.Period));
+        AddCycleCommand = new RelayCommand(_ => OpenEditor(EntryKind.Cycle));
+        EditSelectedCommand = new RelayCommand(_ => OpenEditor(EntryKind.Day), _ => SelectedDay is not null);
         DeleteSelectedCommand = new RelayCommand(_ => DeleteSelected(), _ => SelectedDay?.Entry is not null);
 
         _events.EntriesChanged += ReloadKeepingSelection;
@@ -92,6 +93,7 @@ public sealed class CalendarViewModel : ObservableObject
     public RelayCommand SelectDayCommand { get; }
     public RelayCommand AddEntryCommand { get; }
     public RelayCommand AddPeriodCommand { get; }
+    public RelayCommand AddCycleCommand { get; }
     public RelayCommand EditSelectedCommand { get; }
     public RelayCommand DeleteSelectedCommand { get; }
 
@@ -168,16 +170,16 @@ public sealed class CalendarViewModel : ObservableObject
 
     private void ReloadKeepingSelection() => LoadMonth();
 
-    private void OpenEditor(bool periodMode)
+    private void OpenEditor(EntryKind kind)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
         bool todayVisible = today.Month == _visibleMonth.Month && today.Year == _visibleMonth.Year;
         DateOnly anchor = SelectedDay?.Date ?? (todayVisible ? today : _visibleMonth);
 
-        var existing = !periodMode && SelectedDay is not null ? _repo.Get(SelectedDay.Date) : null;
+        var existing = kind == EntryKind.Day && SelectedDay is not null ? _repo.Get(SelectedDay.Date) : null;
         var salary = _settingsRepo.LoadSalary();
 
-        var editor = new EntryEditorViewModel(_repo, _activityLog, salary, anchor, existing, periodMode);
+        var editor = new EntryEditorViewModel(_repo, _activityLog, salary, anchor, existing, kind);
         var result = _showEditor(editor);
 
         if (result == true)

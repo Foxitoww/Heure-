@@ -11,7 +11,7 @@ public enum AppTheme
 /// <summary>Réglages généraux de l'application.</summary>
 public sealed class AppSettings
 {
-    public AppTheme Theme { get; set; } = AppTheme.Light;
+    public AppTheme Theme { get; set; } = AppTheme.Dark;
 
     public DayOfWeek FirstDayOfWeek { get; set; } = DayOfWeek.Monday;
 

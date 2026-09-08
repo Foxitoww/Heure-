@@ -57,6 +57,9 @@
     <SolidColorBrush x:Key="Brush.DangerSoft" Color="#3A2523" />
     <SolidColorBrush x:Key="Brush.Success"    Color="#6CCB70" />
 
+    <!-- Texte des lignes d'historique : violet clair (thème sombre uniquement) -->
+    <SolidColorBrush x:Key="Brush.HistoryText" Color="#C9B8F5" />
+
     <!-- Ombres -->
     <Color x:Key="Color.Shadow">#8C000000</Color>
 

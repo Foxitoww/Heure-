@@ -37,9 +37,8 @@ public static class ExcelExportService
         int row = 2;
         foreach (var e in entries.OrderBy(e => e.Date))
         {
-            double rate = e.HourlyRateOverride is > 0 ? e.HourlyRateOverride!.Value : salary.HourlyRate;
-            bool working = e.Status.IsWorking();
-            double pay = working ? e.NormalHours * rate + e.OvertimeHours * rate * salary.OvertimeMultiplier : 0;
+            double rate = SalaryCalculator.RateOf(e, salary);
+            double pay = SalaryCalculator.DayPay(e, salary);
 
             var date = e.Date.ToDateTime(TimeOnly.MinValue);
             journal.Cell(row, 1).Value = date;

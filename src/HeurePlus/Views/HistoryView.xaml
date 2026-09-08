@@ -67,7 +67,8 @@
                                                HorizontalAlignment="Center" Foreground="{DynamicResource Brush.TextMuted}" />
                                 </Border>
                                 <TextBlock Grid.Column="1" Text="{Binding Description}" Margin="14,0,14,0"
-                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource Brush.HistoryText}" />
                                 <TextBlock Grid.Column="2" Text="{Binding When}" VerticalAlignment="Center"
                                            Foreground="{DynamicResource Brush.TextTertiary}" FontSize="12" />
                             </Grid>

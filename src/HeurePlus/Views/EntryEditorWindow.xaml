@@ -6,7 +6,7 @@
         xmlns:vm="clr-namespace:HeurePlus.ViewModels"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance vm:EntryEditorViewModel}"
-        Title="{Binding Title}" Height="660" Width="540"
+        Title="{Binding Title}" Height="760" Width="600"
         Icon="/HeurePlus;component/heureplus.ico"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         FontFamily="{StaticResource Font.Text}" FontSize="14" Language="fr-FR"
@@ -28,17 +28,19 @@
             <StackPanel>
 
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                    <RadioButton Content="Une journée" GroupName="Kind" Margin="0,0,24,0"
-                                 IsChecked="{Binding IsPeriod, Converter={StaticResource InvBool}}" />
-                    <RadioButton Content="Une période" GroupName="Kind" IsChecked="{Binding IsPeriod}" />
+                    <RadioButton Content="Une journée" GroupName="Kind" Margin="0,0,20,0" IsChecked="{Binding KindDay}" />
+                    <RadioButton Content="Une période" GroupName="Kind" Margin="0,0,20,0" IsChecked="{Binding KindPeriod}" />
+                    <RadioButton Content="Un cycle" GroupName="Kind" IsChecked="{Binding KindCycle}" />
                 </StackPanel>
 
+                <!-- Jour unique -->
                 <StackPanel Visibility="{Binding IsSingleDay, Converter={StaticResource BoolToVis}}">
                     <TextBlock Text="DATE" Style="{StaticResource FieldLabel}" />
                     <DatePicker SelectedDate="{Binding Date}" Width="200" HorizontalAlignment="Left" Margin="0,0,0,4" />
                 </StackPanel>
 
-                <StackPanel Visibility="{Binding IsPeriod, Converter={StaticResource BoolToVis}}">
+                <!-- Plage (période ou cycle) -->
+                <StackPanel Visibility="{Binding IsSingleDay, Converter={StaticResource BoolToVis}, ConverterParameter=invert}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
@@ -54,82 +56,163 @@
                             <DatePicker SelectedDate="{Binding EndDate}" />
                         </StackPanel>
                     </Grid>
-                    <CheckBox Content="Inclure les samedis et dimanches" IsChecked="{Binding IncludeWeekends}" Margin="0,12,0,0" />
+                    <CheckBox Content="Inclure les samedis et dimanches" IsChecked="{Binding IncludeWeekends}" Margin="0,12,0,0"
+                              Visibility="{Binding IsPeriod, Converter={StaticResource BoolToVis}}" />
                     <Border Style="{StaticResource Divider}" />
                 </StackPanel>
 
-                <TextBlock Text="STATUT" Style="{StaticResource FieldLabel}" Margin="0,6,0,5" />
-                <ComboBox ItemsSource="{Binding StatusOptions}" SelectedValuePath="Value"
-                          SelectedValue="{Binding Status}" Width="220" HorizontalAlignment="Left" Margin="0,0,0,16">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock Text="{Binding Label}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+                <!-- ============ Cycle (rotation) ============ -->
+                <StackPanel Visibility="{Binding IsCycle, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="MODÈLE DE CYCLE" Style="{StaticResource FieldLabel}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                        <Button Style="{StaticResource GhostButton}" MinHeight="30" Padding="12,0" Content="2/2"
+                                Command="{Binding ApplyPresetCommand}" CommandParameter="2/2" />
+                        <Button Style="{StaticResource GhostButton}" MinHeight="30" Padding="12,0" Content="3/3" Margin="6,0,0,0"
+                                Command="{Binding ApplyPresetCommand}" CommandParameter="3/3" />
+                        <Button Style="{StaticResource GhostButton}" MinHeight="30" Padding="12,0" Content="4/4" Margin="6,0,0,0"
+                                Command="{Binding ApplyPresetCommand}" CommandParameter="4/4" />
+                        <Button Style="{StaticResource GhostButton}" MinHeight="30" Padding="12,0" Content="5/2" Margin="6,0,0,0"
+                                Command="{Binding ApplyPresetCommand}" CommandParameter="5/2" />
+                        <Button Style="{StaticResource GhostButton}" MinHeight="30" Padding="12,0" Content="6/1" Margin="6,0,0,0"
+                                Command="{Binding ApplyPresetCommand}" CommandParameter="6/1" />
+                    </StackPanel>
 
-                <Grid IsEnabled="{Binding HoursEnabled}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="12" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="DÉBUT" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding StartText}" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="FIN" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding EndText}" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="4">
-                        <TextBlock Text="PAUSE (MIN)" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding BreakMinutes}" />
-                    </StackPanel>
-                </Grid>
+                    <ItemsControl ItemsSource="{Binding CycleSteps}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="6" Padding="12" Margin="0,0,0,8">
+                                    <StackPanel>
+                                        <Grid>
+                                            <TextBlock Text="{Binding Label}" Style="{StaticResource BodyStrong}" VerticalAlignment="Center" />
+                                            <Button HorizontalAlignment="Right" Width="26" Height="26"
+                                                    Style="{StaticResource RoundIconButton}"
+                                                    FontFamily="{StaticResource Font.Icons}" Content="&#xE74D;"
+                                                    ToolTip="Retirer ce jour du cycle"
+                                                    Command="{Binding DataContext.RemoveCycleStepCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </Grid>
+                                        <Grid Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="128" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <ComboBox Grid.Column="0" VerticalAlignment="Top"
+                                                      ItemsSource="{Binding StatusOptions}" SelectedValuePath="Value"
+                                                      SelectedValue="{Binding Status}">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate><TextBlock Text="{Binding Label}" /></DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+                                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="10,0,0,0"
+                                                        IsEnabled="{Binding HoursEnabled}">
+                                                <StackPanel Margin="0,0,7,0">
+                                                    <TextBlock Text="Début" Style="{StaticResource Caption}" />
+                                                    <TextBox Text="{Binding StartText, UpdateSourceTrigger=LostFocus}" Width="62" />
+                                                </StackPanel>
+                                                <StackPanel Margin="0,0,7,0">
+                                                    <TextBlock Text="Fin" Style="{StaticResource Caption}" />
+                                                    <TextBox Text="{Binding EndText, UpdateSourceTrigger=LostFocus}" Width="62" />
+                                                </StackPanel>
+                                                <StackPanel Margin="0,0,7,0">
+                                                    <TextBlock Text="Pause" Style="{StaticResource Caption}" />
+                                                    <TextBox Text="{Binding BreakMinutes, UpdateSourceTrigger=LostFocus}" Width="48" />
+                                                </StackPanel>
+                                                <StackPanel>
+                                                    <TextBlock Text="Sup / retrait" Style="{StaticResource Caption}" />
+                                                    <TextBox Text="{Binding OvertimeHours}" Width="58" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                        <TextBlock Margin="0,6,0,0" Style="{StaticResource Caption}"
+                                                   Visibility="{Binding HoursEnabled, Converter={StaticResource BoolToVis}}"
+                                                   Text="{Binding TotalHours, StringFormat=Total du jour : {0} h}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                <Button Style="{StaticResource SubtleButton}" HorizontalAlignment="Left" Margin="0,10,0,0"
-                        IsEnabled="{Binding HoursEnabled}" Command="{Binding ComputeFromScheduleCommand}"
-                        Content="Calculer les heures depuis les horaires" />
+                    <Button Style="{StaticResource SubtleButton}" HorizontalAlignment="Left"
+                            Command="{Binding AddCycleStepCommand}" Content="＋  Ajouter un jour au cycle" />
+                    <TextBlock Text="{Binding CyclePreviewText}" Style="{StaticResource Caption}" Margin="0,6,0,0" />
+                    <Border Style="{StaticResource Divider}" />
+                </StackPanel>
 
-                <Grid Margin="0,14,0,0" IsEnabled="{Binding HoursEnabled}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="14" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock Text="HEURES NORMALES" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding NormalHours}" />
-                    </StackPanel>
-                    <StackPanel Grid.Column="2">
-                        <TextBlock Text="HEURES SUPPLÉMENTAIRES" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding OvertimeHours}" />
-                    </StackPanel>
-                </Grid>
+                <!-- ============ Statut + horaires (journée / période) ============ -->
+                <StackPanel Visibility="{Binding ShowSchedule, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="STATUT" Style="{StaticResource FieldLabel}" Margin="0,6,0,5" />
+                    <ComboBox ItemsSource="{Binding StatusOptions}" SelectedValuePath="Value"
+                              SelectedValue="{Binding Status}" Width="220" HorizontalAlignment="Left" Margin="0,0,0,16">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate><TextBlock Text="{Binding Label}" /></DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
+                    <Grid IsEnabled="{Binding HoursEnabled}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="DÉBUT" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding StartText}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="FIN" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding EndText}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="4">
+                            <TextBlock Text="PAUSE (MIN)" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding BreakMinutes}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Style="{StaticResource SubtleButton}" HorizontalAlignment="Left" Margin="0,10,0,0"
+                            IsEnabled="{Binding HoursEnabled}" Command="{Binding ComputeFromScheduleCommand}"
+                            Content="Calculer les heures depuis les horaires" />
+
+                    <Grid Margin="0,14,0,0" IsEnabled="{Binding HoursEnabled}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="14" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="HEURES NORMALES" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding NormalHours}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="HEURES SUP. / RETRAIT" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding OvertimeHours}" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Style="{StaticResource Caption}" Margin="0,4,0,0"
+                               Text="Valeur négative = heures retirées (départ anticipé), payées au taux normal." />
+                </StackPanel>
+
+                <!-- ============ Commun ============ -->
                 <CheckBox Content="Taux horaire spécifique pour cette saisie" IsChecked="{Binding UseCustomRate}" Margin="0,16,0,0" />
                 <TextBox Text="{Binding CustomRate}" IsEnabled="{Binding UseCustomRate}" Width="150" HorizontalAlignment="Left" Margin="0,4,0,0" />
 
                 <Border Style="{StaticResource Divider}" />
                 <TextBlock Text="APPLIQUER AUX JOURS DÉJÀ REMPLIS" Style="{StaticResource FieldLabel}" />
                 <StackPanel>
-                    <RadioButton Content="Remplacer la saisie existante" GroupName="ApplyMode"
-                                 IsChecked="{Binding ModeReplace}" />
-                    <RadioButton Content="Cumuler les heures (ajouter sans écraser le travail)" GroupName="ApplyMode"
+                    <RadioButton Content="Remplacer la saisie existante" GroupName="ApplyMode" IsChecked="{Binding ModeReplace}" />
+                    <RadioButton Content="Cumuler les heures (ajouter / retirer sans écraser le travail)" GroupName="ApplyMode"
                                  IsChecked="{Binding ModeAdd}" />
                     <RadioButton Content="Ignorer les jours déjà remplis" GroupName="ApplyMode"
                                  IsChecked="{Binding ModeSkip}"
-                                 Visibility="{Binding IsPeriod, Converter={StaticResource BoolToVis}}" />
+                                 Visibility="{Binding IsSingleDay, Converter={StaticResource BoolToVis}, ConverterParameter=invert}" />
                 </StackPanel>
                 <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,4,0,0"
                            Visibility="{Binding IsAddMode, Converter={StaticResource BoolToVis}}"
-                           Text="Les heures saisies s'ajoutent à celles déjà enregistrées (les heures de travail sont conservées). Les jours encore vides sont créés normalement." />
+                           Text="Les heures saisies s'ajoutent (ou se retirent, si négatives) à celles déjà enregistrées. Les jours vides sont créés normalement." />
 
                 <TextBlock Text="NOTE" Style="{StaticResource FieldLabel}" Margin="0,16,0,5" />
-                <TextBox Text="{Binding Note}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70"
+                <TextBox Text="{Binding Note}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64"
                          VerticalContentAlignment="Top" Padding="10,8" VerticalScrollBarVisibility="Auto" />
 
                 <Border Margin="0,14,0,0" CornerRadius="6" Padding="12,10"

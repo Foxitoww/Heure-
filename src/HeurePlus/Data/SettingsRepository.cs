@@ -55,7 +55,8 @@ public sealed class SettingsRepository
 
     public AppSettings LoadApp() => new()
     {
-        Theme = GetString("app.theme") == nameof(AppTheme.Dark) ? AppTheme.Dark : AppTheme.Light,
+        // Thème sombre par défaut ; on ne repasse en clair que si l'utilisateur l'a explicitement choisi.
+        Theme = GetString("app.theme") == nameof(AppTheme.Light) ? AppTheme.Light : AppTheme.Dark,
         FirstDayOfWeek = GetString("app.firstDayOfWeek") == nameof(DayOfWeek.Sunday)
             ? DayOfWeek.Sunday
             : DayOfWeek.Monday,

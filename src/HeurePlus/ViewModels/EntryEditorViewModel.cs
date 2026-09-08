@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using HeurePlus.Data;
 using HeurePlus.Infrastructure;
@@ -7,7 +8,9 @@ using HeurePlus.Models;
 
 namespace HeurePlus.ViewModels;
 
-/// <summary>Fenêtre « Ajouter / modifier une journée ou une période ».</summary>
+public enum EntryKind { Day, Period, Cycle }
+
+/// <summary>Fenêtre « Ajouter / modifier une journée, une période ou un cycle ».</summary>
 public sealed class EntryEditorViewModel : ObservableObject
 {
     private readonly DayEntryRepository _repo;
@@ -22,16 +25,16 @@ public sealed class EntryEditorViewModel : ObservableObject
         SalarySettings salary,
         DateOnly date,
         DayEntry? existing,
-        bool periodMode)
+        EntryKind kind)
     {
         _repo = repo;
         _activityLog = activityLog;
         _salary = salary;
 
+        _kind = kind;
         _date = date.ToDateTime(default);
         _startDate = _date;
-        _endDate = _date;
-        _isPeriod = periodMode;
+        _endDate = _date.AddDays(13);
 
         if (existing is not null)
         {
@@ -49,12 +52,22 @@ public sealed class EntryEditorViewModel : ObservableObject
         else
         {
             _customRate = salary.HourlyRate;
-            Title = periodMode ? "Ajouter une période" : "Ajouter une journée";
+            Title = kind switch
+            {
+                EntryKind.Cycle => "Ajouter un cycle",
+                EntryKind.Period => "Ajouter une période",
+                _ => "Ajouter une journée"
+            };
         }
 
         SaveCommand = new RelayCommand(_ => Save());
         CancelCommand = new RelayCommand(_ => CloseRequested?.Invoke(false));
         ComputeFromScheduleCommand = new RelayCommand(_ => ComputeFromSchedule());
+        AddCycleStepCommand = new RelayCommand(_ => AddCycleStep());
+        RemoveCycleStepCommand = new RelayCommand(p => RemoveCycleStep(p as CycleStepViewModel));
+        ApplyPresetCommand = new RelayCommand(p => ApplyPreset(p?.ToString() ?? ""));
+
+        if (CycleSteps.Count == 0) ApplyPreset("2/2");
     }
 
     public string Title { get; }
@@ -70,29 +83,130 @@ public sealed class EntryEditorViewModel : ObservableObject
     public RelayCommand SaveCommand { get; }
     public RelayCommand CancelCommand { get; }
     public RelayCommand ComputeFromScheduleCommand { get; }
+    public RelayCommand AddCycleStepCommand { get; }
+    public RelayCommand RemoveCycleStepCommand { get; }
+    public RelayCommand ApplyPresetCommand { get; }
 
-    private bool _isPeriod;
-    public bool IsPeriod
+    // ---------- Type de saisie ----------
+
+    private EntryKind _kind;
+
+    public bool IsSingleDay => _kind == EntryKind.Day;
+    public bool IsPeriod => _kind == EntryKind.Period;
+    public bool IsCycle => _kind == EntryKind.Cycle;
+    public bool ShowSchedule => _kind != EntryKind.Cycle;   // horaires simples cachés en mode cycle
+
+    public bool KindDay
     {
-        get => _isPeriod;
-        set { if (SetProperty(ref _isPeriod, value)) OnPropertyChanged(nameof(IsSingleDay)); }
+        get => _kind == EntryKind.Day;
+        set { if (value) SetKind(EntryKind.Day); }
+    }
+    public bool KindPeriod
+    {
+        get => _kind == EntryKind.Period;
+        set { if (value) SetKind(EntryKind.Period); }
+    }
+    public bool KindCycle
+    {
+        get => _kind == EntryKind.Cycle;
+        set { if (value) SetKind(EntryKind.Cycle); }
     }
 
-    public bool IsSingleDay => !_isPeriod;
+    private void SetKind(EntryKind kind)
+    {
+        if (_kind == kind) return;
+        _kind = kind;
+        OnPropertyChanged(nameof(KindDay));
+        OnPropertyChanged(nameof(KindPeriod));
+        OnPropertyChanged(nameof(KindCycle));
+        OnPropertyChanged(nameof(IsSingleDay));
+        OnPropertyChanged(nameof(IsPeriod));
+        OnPropertyChanged(nameof(IsCycle));
+        OnPropertyChanged(nameof(ShowSchedule));
+        OnPropertyChanged(nameof(CyclePreviewText));
+    }
 
     private DateTime _date;
     public DateTime Date { get => _date; set => SetProperty(ref _date, value); }
 
     private DateTime _startDate;
-    public DateTime StartDate { get => _startDate; set => SetProperty(ref _startDate, value); }
+    public DateTime StartDate
+    {
+        get => _startDate;
+        set { if (SetProperty(ref _startDate, value)) OnPropertyChanged(nameof(CyclePreviewText)); }
+    }
 
     private DateTime _endDate;
-    public DateTime EndDate { get => _endDate; set => SetProperty(ref _endDate, value); }
+    public DateTime EndDate
+    {
+        get => _endDate;
+        set { if (SetProperty(ref _endDate, value)) OnPropertyChanged(nameof(CyclePreviewText)); }
+    }
 
     private bool _includeWeekends;
     public bool IncludeWeekends { get => _includeWeekends; set => SetProperty(ref _includeWeekends, value); }
 
-    // Comment appliquer la saisie aux jours qui possèdent déjà une entrée.
+    // ---------- Cycle (rotation) ----------
+
+    public ObservableCollection<CycleStepViewModel> CycleSteps { get; } = new();
+
+    public string CyclePreviewText
+    {
+        get
+        {
+            if (CycleSteps.Count == 0) return "Ajoutez au moins un jour au cycle.";
+            var from = DateOnly.FromDateTime(_startDate.Date);
+            var to = DateOnly.FromDateTime(_endDate.Date);
+            if (to < from) (from, to) = (to, from);
+            int days = to.DayNumber - from.DayNumber + 1;
+            double repeats = days / (double)CycleSteps.Count;
+            return $"Cycle de {CycleSteps.Count} jour(s), répété {repeats:0.#} fois sur {days} jour(s).";
+        }
+    }
+
+    private void AddCycleStep()
+    {
+        var last = CycleSteps.LastOrDefault();
+        CycleSteps.Add(last is null
+            ? new CycleStepViewModel(CycleSteps.Count + 1)
+            : new CycleStepViewModel(CycleSteps.Count + 1, last.Status, last.StartText, last.EndText,
+                last.BreakMinutes, last.NormalHours, last.OvertimeHours));
+        OnPropertyChanged(nameof(CyclePreviewText));
+    }
+
+    private void RemoveCycleStep(CycleStepViewModel? step)
+    {
+        if (step is null) return;
+        CycleSteps.Remove(step);
+        Renumber();
+    }
+
+    private void ApplyPreset(string preset)
+    {
+        CycleSteps.Clear();
+        void Work() => CycleSteps.Add(new CycleStepViewModel(0, DayStatus.Travail, "08:00", "16:00", 0, 8, 0));
+        void Rest() => CycleSteps.Add(new CycleStepViewModel(0, DayStatus.Repos, string.Empty, string.Empty, 0, 0, 0));
+
+        switch (preset)
+        {
+            case "2/2": Work(); Work(); Rest(); Rest(); break;
+            case "3/3": Work(); Work(); Work(); Rest(); Rest(); Rest(); break;
+            case "4/4": for (int i = 0; i < 4; i++) Work(); for (int i = 0; i < 4; i++) Rest(); break;
+            case "5/2": for (int i = 0; i < 5; i++) Work(); Rest(); Rest(); break;
+            case "6/1": for (int i = 0; i < 6; i++) Work(); Rest(); break;
+            default: Work(); Work(); Rest(); break;
+        }
+        Renumber();
+    }
+
+    private void Renumber()
+    {
+        for (int i = 0; i < CycleSteps.Count; i++) CycleSteps[i].Index = i + 1;
+        OnPropertyChanged(nameof(CyclePreviewText));
+    }
+
+    // ---------- Mode d'application ----------
+
     private enum ApplyMode { Replace, Add, Skip }
     private ApplyMode _mode = ApplyMode.Replace;
 
@@ -109,7 +223,6 @@ public sealed class EntryEditorViewModel : ObservableObject
         {
             if (!value || _mode == ApplyMode.Add) return;
             SetMode(ApplyMode.Add);
-            // Les champs deviennent un « delta » à ajouter : on repart de zéro.
             _normalHours = 0;
             _overtimeHours = 0;
             _note = string.Empty;
@@ -141,15 +254,13 @@ public sealed class EntryEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(IsAddMode));
     }
 
+    // ---------- Journée / période simple ----------
+
     private DayStatus _status = DayStatus.Travail;
     public DayStatus Status
     {
         get => _status;
-        set
-        {
-            if (SetProperty(ref _status, value))
-                OnPropertyChanged(nameof(HoursEnabled));
-        }
+        set { if (SetProperty(ref _status, value)) OnPropertyChanged(nameof(HoursEnabled)); }
     }
 
     public bool HoursEnabled => _status.IsWorking();
@@ -194,13 +305,15 @@ public sealed class EntryEditorViewModel : ObservableObject
         }
 
         double span = (end.Value - start.Value).TotalHours;
-        if (span < 0) span += 24; // service de nuit
+        if (span < 0) span += 24;
         span -= _breakMinutes / 60.0;
         span = Math.Max(0, Math.Round(span, 2));
 
         NormalHours = Math.Max(0, span - OvertimeHours);
         Error = null;
     }
+
+    // ---------- Enregistrement ----------
 
     private void Save()
     {
@@ -209,95 +322,130 @@ public sealed class EntryEditorViewModel : ObservableObject
         var dates = BuildDates();
         if (dates.Count == 0)
         {
-            Error = IsPeriod
-                ? "La période ne contient aucun jour (vérifiez les dates / les week-ends)."
-                : "Date invalide.";
+            Error = _kind == EntryKind.Day
+                ? "Date invalide."
+                : "La plage ne contient aucun jour (vérifiez les dates / les week-ends).";
             return;
         }
 
-        TimeOnly? start = ParseTime(_startText);
-        TimeOnly? end = ParseTime(_endText);
-        if (HoursEnabled && !string.IsNullOrWhiteSpace(_startText) && start is null)
-        {
-            Error = "Heure de début invalide (format HH:mm).";
-            return;
-        }
-        if (HoursEnabled && !string.IsNullOrWhiteSpace(_endText) && end is null)
-        {
-            Error = "Heure de fin invalide (format HH:mm).";
-            return;
-        }
-
-        double normal = HoursEnabled ? Math.Max(0, NormalHours) : 0;
-        double overtime = HoursEnabled ? Math.Max(0, OvertimeHours) : 0;
         double? rate = UseCustomRate && CustomRate > 0 ? CustomRate : null;
-
         string extraNote = _note?.Trim() ?? string.Empty;
 
-        var toSave = new List<DayEntry>();
-        foreach (var d in dates)
+        List<DayEntry> toSave;
+
+        if (_kind == EntryKind.Cycle)
         {
-            var existing = _repo.Get(d);
-
-            if (existing is not null && _mode == ApplyMode.Skip)
-                continue;
-
-            if (existing is not null && _mode == ApplyMode.Add)
+            if (CycleSteps.Count == 0)
             {
-                var merged = existing.Clone();
-                merged.NormalHours = Math.Max(0, existing.NormalHours + normal);
-                merged.OvertimeHours = Math.Max(0, existing.OvertimeHours + overtime);
-                // Ajouter des heures sup à un jour de travail ne change pas son statut.
-                if (!existing.Status.IsWorking()) merged.Status = _status;
-                merged.StartTime ??= (HoursEnabled ? start : null);
-                merged.EndTime ??= (HoursEnabled ? end : null);
-                if (merged.BreakMinutes == 0 && HoursEnabled && _breakMinutes > 0)
-                    merged.BreakMinutes = _breakMinutes;
-                if (rate is not null) merged.HourlyRateOverride = rate;
-                if (extraNote.Length > 0)
-                    merged.Note = string.IsNullOrWhiteSpace(existing.Note)
-                        ? extraNote
-                        : existing.Note + " · " + extraNote;
-                merged.UpdatedAt = DateTime.Now;
-                toSave.Add(merged);
+                Error = "Ajoutez au moins un jour au cycle.";
+                return;
             }
-            else
+            toSave = BuildCycleEntries(dates, rate, extraNote);
+        }
+        else
+        {
+            TimeOnly? start = ParseTime(_startText);
+            TimeOnly? end = ParseTime(_endText);
+            if (HoursEnabled && !string.IsNullOrWhiteSpace(_startText) && start is null)
             {
-                toSave.Add(new DayEntry
-                {
-                    Date = d,
-                    Status = _status,
-                    StartTime = HoursEnabled ? start : null,
-                    EndTime = HoursEnabled ? end : null,
-                    BreakMinutes = HoursEnabled ? Math.Max(0, _breakMinutes) : 0,
-                    NormalHours = normal,
-                    OvertimeHours = overtime,
-                    HourlyRateOverride = rate,
-                    Note = extraNote,
-                    UpdatedAt = DateTime.Now
-                });
+                Error = "Heure de début invalide (format HH:mm).";
+                return;
+            }
+            if (HoursEnabled && !string.IsNullOrWhiteSpace(_endText) && end is null)
+            {
+                Error = "Heure de fin invalide (format HH:mm).";
+                return;
+            }
+
+            double normal = HoursEnabled ? Math.Max(0, NormalHours) : 0;
+            double overtime = HoursEnabled ? OvertimeHours : 0; // peut être négatif (heures retirées)
+
+            toSave = new List<DayEntry>();
+            foreach (var d in dates)
+            {
+                var entry = BuildEntry(d, _status, HoursEnabled ? start : null, HoursEnabled ? end : null,
+                    HoursEnabled ? Math.Max(0, _breakMinutes) : 0, normal, overtime, rate, extraNote);
+                if (entry is not null) toSave.Add(entry);
             }
         }
 
         if (toSave.Count == 0)
         {
             Error = _mode == ApplyMode.Skip
-                ? "Tous les jours de la période sont déjà remplis."
+                ? "Tous les jours concernés sont déjà remplis."
                 : "Aucune date à enregistrer.";
             return;
         }
 
         _repo.SaveMany(toSave);
-        LogSaved(dates, normal, overtime);
+        LogSaved(dates);
         CloseRequested?.Invoke(true);
     }
 
-    private void LogSaved(List<DateOnly> dates, double normal, double overtime)
+    private List<DayEntry> BuildCycleEntries(List<DateOnly> dates, double? rate, string extraNote)
     {
-        string hours = _status.IsWorking()
-            ? $" — {Fmt.H(normal)} + {Fmt.H(overtime)} sup."
-            : string.Empty;
+        var list = new List<DayEntry>();
+        for (int i = 0; i < dates.Count; i++)
+        {
+            var step = CycleSteps[i % CycleSteps.Count];
+            bool working = step.Status.IsWorking();
+            var entry = BuildEntry(
+                dates[i], step.Status,
+                working ? CycleStepViewModel.ParseTime(step.StartText) : null,
+                working ? CycleStepViewModel.ParseTime(step.EndText) : null,
+                working ? Math.Max(0, step.BreakMinutes) : 0,
+                working ? Math.Max(0, step.NormalHours) : 0,
+                working ? step.OvertimeHours : 0,
+                rate, extraNote);
+            if (entry is not null) list.Add(entry);
+        }
+        return list;
+    }
 
+    /// <summary>Construit (ou fusionne) l'entrée d'un jour selon le mode d'application. null = à ignorer.</summary>
+    private DayEntry? BuildEntry(DateOnly d, DayStatus status, TimeOnly? start, TimeOnly? end,
+        int breakMinutes, double normal, double overtime, double? rate, string extraNote)
+    {
+        var existing = _repo.Get(d);
+
+        if (existing is not null && _mode == ApplyMode.Skip)
+            return null;
+
+        if (existing is not null && _mode == ApplyMode.Add)
+        {
+            var merged = existing.Clone();
+            merged.NormalHours = Math.Max(0, existing.NormalHours + normal);
+            merged.OvertimeHours = existing.OvertimeHours + overtime; // solde, peut devenir négatif
+            if (!existing.Status.IsWorking()) merged.Status = status;
+            merged.StartTime ??= start;
+            merged.EndTime ??= end;
+            if (merged.BreakMinutes == 0 && breakMinutes > 0) merged.BreakMinutes = breakMinutes;
+            if (rate is not null) merged.HourlyRateOverride = rate;
+            if (extraNote.Length > 0)
+                merged.Note = string.IsNullOrWhiteSpace(existing.Note)
+                    ? extraNote
+                    : existing.Note + " · " + extraNote;
+            merged.UpdatedAt = DateTime.Now;
+            return merged;
+        }
+
+        return new DayEntry
+        {
+            Date = d,
+            Status = status,
+            StartTime = start,
+            EndTime = end,
+            BreakMinutes = breakMinutes,
+            NormalHours = normal,
+            OvertimeHours = overtime,
+            HourlyRateOverride = rate,
+            Note = extraNote,
+            UpdatedAt = DateTime.Now
+        };
+    }
+
+    private void LogSaved(List<DateOnly> dates)
+    {
         string modeText = _mode switch
         {
             ApplyMode.Add => " · cumul des heures",
@@ -305,17 +453,30 @@ public sealed class EntryEditorViewModel : ObservableObject
             _ => string.Empty
         };
 
-        if (IsPeriod)
+        switch (_kind)
         {
-            var min = dates[0];
-            var max = dates[^1];
-            _activityLog.Log(ActivityCategory.Periode,
-                $"Période du {min:dd/MM/yyyy} au {max:dd/MM/yyyy} — {dates.Count} jour(s) · {_status.Label()}{hours}{modeText}");
-        }
-        else
-        {
-            _activityLog.Log(ActivityCategory.Saisie,
-                $"{dates[0]:dd/MM/yyyy} · {_status.Label()}{hours}{modeText}");
+            case EntryKind.Cycle:
+                var pattern = string.Join(" ", CycleSteps.Select(s => s.Status == DayStatus.Repos ? "R"
+                    : s.Status == DayStatus.Conge ? "C" : "T"));
+                _activityLog.Log(ActivityCategory.Periode,
+                    $"Cycle [{pattern}] du {dates[0]:dd/MM/yyyy} au {dates[^1]:dd/MM/yyyy} — {dates.Count} jour(s){modeText}");
+                break;
+
+            case EntryKind.Period:
+                string hours = _status.IsWorking()
+                    ? $" — {Fmt.H(Math.Max(0, NormalHours))} + {Fmt.H(Math.Max(0, OvertimeHours))} sup."
+                    : string.Empty;
+                _activityLog.Log(ActivityCategory.Periode,
+                    $"Période du {dates[0]:dd/MM/yyyy} au {dates[^1]:dd/MM/yyyy} — {dates.Count} jour(s) · {_status.Label()}{hours}{modeText}");
+                break;
+
+            default:
+                string h = _status.IsWorking()
+                    ? $" — {Fmt.H(Math.Max(0, NormalHours))} + {Fmt.H(Math.Max(0, OvertimeHours))} sup."
+                    : string.Empty;
+                _activityLog.Log(ActivityCategory.Saisie,
+                    $"{dates[0]:dd/MM/yyyy} · {_status.Label()}{h}{modeText}");
+                break;
         }
     }
 
@@ -323,7 +484,7 @@ public sealed class EntryEditorViewModel : ObservableObject
     {
         var result = new List<DateOnly>();
 
-        if (!IsPeriod)
+        if (_kind == EntryKind.Day)
         {
             result.Add(DateOnly.FromDateTime(_date));
             return result;
@@ -335,8 +496,9 @@ public sealed class EntryEditorViewModel : ObservableObject
 
         for (var d = from; d <= to; d = d.AddDays(1))
         {
+            // En mode cycle, les jours de repos font partie de la rotation : on garde tous les jours.
             bool weekend = d.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
-            if (weekend && !IncludeWeekends) continue;
+            if (_kind == EntryKind.Period && weekend && !IncludeWeekends) continue;
             result.Add(d);
         }
         return result;
