@@ -169,8 +169,9 @@ public sealed class SalaryViewModel : ObservableObject
                 p.Category.Contains(q, StringComparison.OrdinalIgnoreCase) ||
                 p.Description.Contains(q, StringComparison.OrdinalIgnoreCase));
 
+        // Sans recherche on borne l'affichage ; une requête montre tout ce qui correspond.
         PrimeResults.Clear();
-        foreach (var p in matches.Take(40)) PrimeResults.Add(p);
+        foreach (var p in matches.Take(q.Length > 0 ? 200 : 60)) PrimeResults.Add(p);
     }
 
     private void AddPrime(Prime prime)
