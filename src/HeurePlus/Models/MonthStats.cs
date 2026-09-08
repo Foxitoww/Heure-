@@ -10,10 +10,14 @@ public sealed class SalaryResult
     public double OvertimeHours { get; init; }
     public double NormalPay { get; init; }
     public double OvertimePay { get; init; }
+    public double PrimesTotal { get; init; }
     public double EndOfMissionBonus { get; init; }
     public double PaidLeaveBonus { get; init; }
 
-    public double Gross => NormalPay + OvertimePay;
+    /// <summary>Détail des primes appliquées (libellé, montant).</summary>
+    public List<(string Name, double Amount)> PrimeLines { get; init; } = new();
+
+    public double Gross => NormalPay + OvertimePay + PrimesTotal;
     public double Total => Gross + EndOfMissionBonus + PaidLeaveBonus;
     public double TotalHours => NormalHours + OvertimeHours;
 }

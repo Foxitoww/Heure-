@@ -86,6 +86,27 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Mise à jour -->
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Mise à jour" Style="{StaticResource SectionTitle}" />
+                        <TextBlock Style="{StaticResource Caption}" TextWrapping="Wrap"
+                                   Text="Récupère la dernière version depuis le dépôt git (branche 0.1). Fonctionne quand l'application est lancée depuis les sources." />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <Button Style="{StaticResource AccentButton}" Content="Vérifier les mises à jour"
+                                    Command="{Binding CheckUpdateCommand}" />
+                            <Button Style="{StaticResource GhostButton}" Content="Mettre à jour" Margin="10,0,0,0"
+                                    Command="{Binding ApplyUpdateCommand}"
+                                    Visibility="{Binding UpdateAvailable, Converter={StaticResource BoolToVis}}" />
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding UpdateInfoText}" Style="{StaticResource Muted}" Margin="0,12,0,0" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding UpdateDetailText}" Style="{StaticResource Caption}" Margin="0,4,0,0"
+                                   Visibility="{Binding UpdateDetailText, Converter={StaticResource NullOrEmptyToVis}}" />
+                    </StackPanel>
+                </Border>
+
                 <!-- À propos -->
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                     <StackPanel>

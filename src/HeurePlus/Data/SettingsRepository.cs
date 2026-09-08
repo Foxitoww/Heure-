@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using HeurePlus.Infrastructure;
 using HeurePlus.Models;
@@ -32,6 +33,8 @@ public sealed class SettingsRepository
         ApplyPaidLeaveBonus = GetBool("salary.icp.enabled", true),
         PaidLeaveRate = GetDouble("salary.icp.rate", 0.10),
         WeeklyHours = GetDouble("salary.weeklyHours", 35),
+        SmicHourly = GetDouble("salary.smic.hourly", 11.88),
+        SmicCoefficient = GetDouble("salary.smic.coef", 1.0),
         Currency = GetString("app.currency") ?? "€"
     };
 
@@ -46,7 +49,28 @@ public sealed class SettingsRepository
             ["salary.icp.enabled"] = Bool(s.ApplyPaidLeaveBonus),
             ["salary.icp.rate"] = s.PaidLeaveRate.ToString(Inv),
             ["salary.weeklyHours"] = s.WeeklyHours.ToString(Inv),
+            ["salary.smic.hourly"] = s.SmicHourly.ToString(Inv),
+            ["salary.smic.coef"] = s.SmicCoefficient.ToString(Inv),
             ["app.currency"] = s.Currency
+        });
+        _events.RaiseSettingsChanged();
+    }
+
+    // ---------- Primes ----------
+
+    public List<AppliedPrime> LoadPrimes()
+    {
+        var json = GetString("salary.primes");
+        if (string.IsNullOrWhiteSpace(json)) return new();
+        try { return JsonSerializer.Deserialize<List<AppliedPrime>>(json) ?? new(); }
+        catch { return new(); }
+    }
+
+    public void SavePrimes(IEnumerable<AppliedPrime> primes)
+    {
+        SetMany(new Dictionary<string, string>
+        {
+            ["salary.primes"] = JsonSerializer.Serialize(primes)
         });
         _events.RaiseSettingsChanged();
     }

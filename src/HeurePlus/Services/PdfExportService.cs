@@ -89,6 +89,8 @@ public static class PdfExportService
                             Money(stats.Salary.NormalPay, salary));
                         Line(table, $"Heures sup. (x{salary.OvertimeMultiplier.ToString("0.##", Fmt.Fr)}) — {Fmt.H(stats.Salary.OvertimeHours)}",
                             Money(stats.Salary.OvertimePay, salary));
+                        foreach (var (name, amount) in stats.Salary.PrimeLines)
+                            Line(table, name, Money(amount, salary));
                         Line(table, "Brut estimé", Money(stats.Salary.Gross, salary), bold: true);
                         if (salary.ApplyEndOfMissionBonus)
                             Line(table, $"IFM ({(salary.EndOfMissionRate * 100).ToString("0.##", Fmt.Fr)} %)",

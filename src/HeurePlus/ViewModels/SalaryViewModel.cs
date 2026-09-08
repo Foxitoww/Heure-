@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using HeurePlus.Data;
 using HeurePlus.Infrastructure;
@@ -23,10 +24,16 @@ public sealed class SalaryViewModel : ObservableObject
         _activityLog = activityLog;
         _events = events;
 
-        LoadFromSettings(_settingsRepo.LoadSalary());
-
         SaveCommand = new RelayCommand(_ => Save());
-        ResetCommand = new RelayCommand(_ => LoadFromSettings(_settingsRepo.LoadSalary()));
+        ResetCommand = new RelayCommand(_ => LoadFromSettings());
+        ApplySmicCommand = new RelayCommand(_ => ApplySmic());
+        ShowSectionParamsCommand = new RelayCommand(_ => Section = 0);
+        ShowSectionPrimesCommand = new RelayCommand(_ => Section = 1);
+        AddPrimeCommand = new RelayCommand(p => { if (p is Prime prime) AddPrime(prime); });
+        RemovePrimeCommand = new RelayCommand(p => { if (p is AppliedPrimeViewModel vm) RemovePrime(vm); });
+
+        LoadFromSettings();
+        RefreshPrimeResults();
 
         _events.EntriesChanged += Recompute;
         Recompute();
@@ -34,11 +41,31 @@ public sealed class SalaryViewModel : ObservableObject
 
     public RelayCommand SaveCommand { get; }
     public RelayCommand ResetCommand { get; }
+    public RelayCommand ApplySmicCommand { get; }
+    public RelayCommand ShowSectionParamsCommand { get; }
+    public RelayCommand ShowSectionPrimesCommand { get; }
+    public RelayCommand AddPrimeCommand { get; }
+    public RelayCommand RemovePrimeCommand { get; }
 
-    public IReadOnlyList<string> ScopeOptions { get; } = new[]
+    // ---------- Sous-onglet ----------
+
+    private int _section;
+    public int Section
     {
-        "Ce mois-ci", "Mois précédent", "Toute la période"
-    };
+        get => _section;
+        set
+        {
+            if (!SetProperty(ref _section, value)) return;
+            OnPropertyChanged(nameof(SectionIsParams));
+            OnPropertyChanged(nameof(SectionIsPrimes));
+        }
+    }
+    public bool SectionIsParams => _section == 0;
+    public bool SectionIsPrimes => _section == 1;
+
+    // ---------- Portée de l'estimation ----------
+
+    public IReadOnlyList<string> ScopeOptions { get; } = new[] { "Ce mois-ci", "Mois précédent", "Toute la période" };
 
     private string _selectedScope = "Ce mois-ci";
     public string SelectedScope
@@ -47,10 +74,10 @@ public sealed class SalaryViewModel : ObservableObject
         set { if (SetProperty(ref _selectedScope, value)) Recompute(); }
     }
 
-    // ---------- Champs éditables ----------
+    // ---------- Paramètres ----------
 
     private double _hourlyRate;
-    public double HourlyRate { get => _hourlyRate; set { if (SetProperty(ref _hourlyRate, value)) Recompute(); } }
+    public double HourlyRate { get => _hourlyRate; set { if (SetProperty(ref _hourlyRate, value)) { Recompute(); OnPropertyChanged(nameof(SmicComparisonText)); } } }
 
     private double _overtimeMultiplier;
     public double OvertimeMultiplier { get => _overtimeMultiplier; set { if (SetProperty(ref _overtimeMultiplier, value)) Recompute(); } }
@@ -71,23 +98,117 @@ public sealed class SalaryViewModel : ObservableObject
     public double WeeklyHours { get => _weeklyHours; set => SetProperty(ref _weeklyHours, value); }
 
     private string _currency = "€";
-    public string Currency
+    public string Currency { get => _currency; set { if (SetProperty(ref _currency, value)) Recompute(); } }
+
+    // ---------- SMIC ----------
+
+    private double _smicHourly;
+    public double SmicHourly
     {
-        get => _currency;
-        set { if (SetProperty(ref _currency, value)) Recompute(); }
+        get => _smicHourly;
+        set { if (SetProperty(ref _smicHourly, value)) OnPropertyChanged(nameof(SmicComparisonText)); }
     }
 
-    // ---------- Résultat (aperçu, non enregistré) ----------
+    private double _smicCoef;
+    public double SmicCoef
+    {
+        get => _smicCoef;
+        set { if (SetProperty(ref _smicCoef, value)) OnPropertyChanged(nameof(SmicComparisonText)); }
+    }
+
+    public string SmicComparisonText
+    {
+        get
+        {
+            if (_smicHourly <= 0) return "";
+            double target = Math.Round(_smicHourly * _smicCoef, 2);
+            double diff = _hourlyRate - _smicHourly;
+            double pct = _smicHourly > 0 ? diff / _smicHourly * 100 : 0;
+            string rel = Math.Abs(pct) < 0.05 ? "au SMIC"
+                : pct > 0 ? $"SMIC +{pct:0.#} %"
+                : $"SMIC {pct:0.#} %";
+            return $"SMIC de référence : {Fmt.Money(_smicHourly, Currency)}/h · votre taux actuel : {rel} · coeff. → {Fmt.Money(target, Currency)}/h";
+        }
+    }
+
+    private void ApplySmic()
+    {
+        HourlyRate = Math.Round(_smicHourly * (_smicCoef <= 0 ? 1.0 : _smicCoef), 2);
+        StatusMessage = $"Taux horaire aligné sur le SMIC ({Fmt.Money(HourlyRate, Currency)}/h).";
+    }
+
+    // ---------- Primes ----------
+
+    public ObservableCollection<AppliedPrimeViewModel> AppliedPrimes { get; } = new();
+    public ObservableCollection<Prime> PrimeResults { get; } = new();
+
+    private string _primeSearch = "";
+    public string PrimeSearch
+    {
+        get => _primeSearch;
+        set { if (SetProperty(ref _primeSearch, value)) RefreshPrimeResults(); }
+    }
+
+    public bool HasPrimes => AppliedPrimes.Count > 0;
+
+    private void RefreshPrimeResults()
+    {
+        var taken = AppliedPrimes.Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var q = _primeSearch?.Trim() ?? "";
+
+        IEnumerable<Prime> matches = PrimeCatalog.All.Where(p => !taken.Contains(p.Name));
+        if (q.Length > 0)
+            matches = matches.Where(p =>
+                p.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                p.Category.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                p.Description.Contains(q, StringComparison.OrdinalIgnoreCase));
+
+        PrimeResults.Clear();
+        foreach (var p in matches.Take(40)) PrimeResults.Add(p);
+    }
+
+    private void AddPrime(Prime prime)
+    {
+        var model = new AppliedPrime
+        {
+            Name = prime.Name,
+            Category = prime.Category,
+            Unit = prime.Unit,
+            Amount = prime.DefaultAmount,
+            Enabled = true
+        };
+        AppliedPrimes.Add(new AppliedPrimeViewModel(model, OnPrimesChanged));
+        _activityLog.Log(ActivityCategory.Salaire, $"Prime ajoutée — {prime.Name}");
+        OnPrimesChanged();
+    }
+
+    private void RemovePrime(AppliedPrimeViewModel vm)
+    {
+        AppliedPrimes.Remove(vm);
+        OnPrimesChanged();
+    }
+
+    private void OnPrimesChanged()
+    {
+        _settingsRepo.SavePrimes(AppliedPrimes.Select(v => v.Model));
+        OnPropertyChanged(nameof(HasPrimes));
+        RefreshPrimeResults();
+        Recompute();
+    }
+
+    // ---------- Résultat (aperçu) ----------
 
     public string ScopeLabel { get; private set; } = "";
     public string NormalHoursText { get; private set; } = "";
     public string NormalPayText { get; private set; } = "";
     public string OvertimeHoursText { get; private set; } = "";
     public string OvertimePayText { get; private set; } = "";
+    public string PrimesText { get; private set; } = "";
     public string GrossText { get; private set; } = "";
     public string IfmText { get; private set; } = "";
     public string IcpText { get; private set; } = "";
     public string TotalText { get; private set; } = "";
+    public bool ShowPrimesLine { get; private set; }
     public bool ShowIfm { get; private set; }
     public bool ShowIcp { get; private set; }
 
@@ -96,8 +217,9 @@ public sealed class SalaryViewModel : ObservableObject
 
     // ---------- Implémentation ----------
 
-    private void LoadFromSettings(SalarySettings s)
+    private void LoadFromSettings()
     {
+        var s = _settingsRepo.LoadSalary();
         _hourlyRate = s.HourlyRate;
         _overtimeMultiplier = s.OvertimeMultiplier;
         _applyIfm = s.ApplyEndOfMissionBonus;
@@ -105,8 +227,16 @@ public sealed class SalaryViewModel : ObservableObject
         _applyIcp = s.ApplyPaidLeaveBonus;
         _icpPercent = Math.Round(s.PaidLeaveRate * 100, 2);
         _weeklyHours = s.WeeklyHours;
+        _smicHourly = s.SmicHourly;
+        _smicCoef = s.SmicCoefficient;
         _currency = s.Currency;
+
+        AppliedPrimes.Clear();
+        foreach (var p in _settingsRepo.LoadPrimes())
+            AppliedPrimes.Add(new AppliedPrimeViewModel(p, OnPrimesChanged));
+
         RaiseAll();
+        RefreshPrimeResults();
         Recompute();
     }
 
@@ -119,6 +249,8 @@ public sealed class SalaryViewModel : ObservableObject
         ApplyPaidLeaveBonus = ApplyIcp,
         PaidLeaveRate = IcpPercent / 100.0,
         WeeklyHours = WeeklyHours,
+        SmicHourly = SmicHourly,
+        SmicCoefficient = SmicCoef,
         Currency = string.IsNullOrWhiteSpace(Currency) ? "€" : Currency
     };
 
@@ -126,10 +258,12 @@ public sealed class SalaryViewModel : ObservableObject
     {
         var settings = CurrentSettings();
         _settingsRepo.SaveSalary(settings);
+        _settingsRepo.SavePrimes(AppliedPrimes.Select(v => v.Model));
         StatusMessage = "Réglages de salaire enregistrés.";
-        _activityLog.Log(Models.ActivityCategory.Salaire,
+        _activityLog.Log(ActivityCategory.Salaire,
             $"Réglages de salaire — taux {Fmt.Money(settings.HourlyRate, settings.Currency)}/h · "
-            + $"heures sup. x{settings.OvertimeMultiplier.ToString("0.##", Fmt.Fr)}");
+            + $"heures sup. x{settings.OvertimeMultiplier.ToString("0.##", Fmt.Fr)}"
+            + (AppliedPrimes.Count > 0 ? $" · {AppliedPrimes.Count} prime(s)" : ""));
     }
 
     private void Recompute()
@@ -142,31 +276,23 @@ public sealed class SalaryViewModel : ObservableObject
             ? _entries.GetAll()
             : _entries.GetRange(from.Value, to.Value);
 
-        var result = SalaryCalculator.Estimate(data, settings);
+        var result = SalaryCalculator.Estimate(data, settings, AppliedPrimes.Select(v => v.Model));
 
         NormalHoursText = Fmt.H(result.NormalHours);
         NormalPayText = Fmt.Money(result.NormalPay, settings.Currency);
         OvertimeHoursText = Fmt.H(result.OvertimeHours);
         OvertimePayText = Fmt.Money(result.OvertimePay, settings.Currency);
+        PrimesText = Fmt.Money(result.PrimesTotal, settings.Currency);
         GrossText = Fmt.Money(result.Gross, settings.Currency);
 
+        ShowPrimesLine = result.PrimesTotal != 0;
         ShowIfm = settings.ApplyEndOfMissionBonus;
         ShowIcp = settings.ApplyPaidLeaveBonus;
         IfmText = Fmt.Money(result.EndOfMissionBonus, settings.Currency);
         IcpText = Fmt.Money(result.PaidLeaveBonus, settings.Currency);
         TotalText = Fmt.Money(result.Total, settings.Currency);
 
-        OnPropertyChanged(nameof(ScopeLabel));
-        OnPropertyChanged(nameof(NormalHoursText));
-        OnPropertyChanged(nameof(NormalPayText));
-        OnPropertyChanged(nameof(OvertimeHoursText));
-        OnPropertyChanged(nameof(OvertimePayText));
-        OnPropertyChanged(nameof(GrossText));
-        OnPropertyChanged(nameof(ShowIfm));
-        OnPropertyChanged(nameof(ShowIcp));
-        OnPropertyChanged(nameof(IfmText));
-        OnPropertyChanged(nameof(IcpText));
-        OnPropertyChanged(nameof(TotalText));
+        RaiseAll();
     }
 
     private (DateOnly? From, DateOnly? To, string Label) ResolveScope()

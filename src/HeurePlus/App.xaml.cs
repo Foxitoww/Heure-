@@ -49,8 +49,19 @@ public partial class App : Application
             return window.ShowDialog();
         };
 
+        Func<RangeDeleteViewModel, bool?> showRangeDelete = vm =>
+        {
+            var window = new RangeDeleteWindow
+            {
+                DataContext = vm,
+                Owner = Current.MainWindow
+            };
+            WindowEffects.Apply(window, theme.Current == Models.AppTheme.Dark);
+            return window.ShowDialog();
+        };
+
         var main = new MainViewModel(
-            new CalendarViewModel(entryRepo, settingsRepo, activityLog, cycleRepo, events, showEditor),
+            new CalendarViewModel(entryRepo, settingsRepo, activityLog, cycleRepo, events, showEditor, showRangeDelete),
             new SalaryViewModel(entryRepo, settingsRepo, activityLog, events),
             new CalculatorViewModel(),
             new DashboardViewModel(entryRepo, settingsRepo, events),

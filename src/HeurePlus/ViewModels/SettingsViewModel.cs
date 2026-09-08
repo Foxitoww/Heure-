@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows;
 using HeurePlus.Data;
 using HeurePlus.Infrastructure;
@@ -20,6 +21,7 @@ public sealed class SettingsViewModel : ObservableObject
     private readonly ActivityLogRepository _activityLog;
     private readonly AppEvents _events;
     private readonly AppDatabase _db;
+    private readonly UpdateService _update = new();
 
     private AppSettings _app;
 
@@ -53,6 +55,12 @@ public sealed class SettingsViewModel : ObservableObject
         OpenDbFolderCommand = new RelayCommand(_ => OpenFolder(Path.GetDirectoryName(_db.DbPath)));
         ExportPdfCommand = new RelayCommand(_ => Export(ExportKind.Pdf));
         ExportExcelCommand = new RelayCommand(_ => Export(ExportKind.Excel));
+        CheckUpdateCommand = new RelayCommand(_ => _ = CheckUpdateAsync(), _ => !_updateBusy);
+        ApplyUpdateCommand = new RelayCommand(_ => _ = ApplyUpdateAsync(), _ => !_updateBusy && _updateAvailable);
+
+        _updateInfoText = _update.IsAvailable
+            ? "Cliquez sur « Vérifier les mises à jour »."
+            : "Application installée : mise à jour manuelle (réinstaller la dernière version).";
     }
 
     public RelayCommand BackupNowCommand { get; }
@@ -171,7 +179,7 @@ public sealed class SettingsViewModel : ObservableObject
         int year = _exportMonth.Year, month = _exportMonth.Month;
         var salary = _settingsRepo.LoadSalary();
         var monthEntries = _entries.GetMonth(year, month);
-        var stats = StatsService.Month(year, month, monthEntries, salary);
+        var stats = StatsService.Month(year, month, monthEntries, salary, _settingsRepo.LoadPrimes());
 
         string stamp = $"{year}-{month:00}";
         bool pdf = kind == ExportKind.Pdf;
@@ -204,6 +212,72 @@ public sealed class SettingsViewModel : ObservableObject
         {
             StatusMessage = "Échec de l'export : " + ex.Message;
         }
+    }
+
+    // ---------- Mise à jour (git, branche 0.1) ----------
+
+    public RelayCommand CheckUpdateCommand { get; }
+    public RelayCommand ApplyUpdateCommand { get; }
+
+    public bool UpdateRepoAvailable => _update.IsAvailable;
+
+    private bool _updateBusy;
+    private bool _updateAvailable;
+    public bool UpdateAvailable { get => _updateAvailable; private set { SetProperty(ref _updateAvailable, value); ApplyUpdateCommand.RaiseCanExecuteChanged(); } }
+
+    private string _updateInfoText = "";
+    public string UpdateInfoText { get => _updateInfoText; private set => SetProperty(ref _updateInfoText, value); }
+
+    private string _updateDetailText = "";
+    public string UpdateDetailText { get => _updateDetailText; private set => SetProperty(ref _updateDetailText, value); }
+
+    private async Task CheckUpdateAsync()
+    {
+        _updateBusy = true;
+        CheckUpdateCommand.RaiseCanExecuteChanged();
+        ApplyUpdateCommand.RaiseCanExecuteChanged();
+        UpdateInfoText = "Vérification en cours…";
+        UpdateDetailText = "";
+
+        var status = await Task.Run(() => _update.Check());
+
+        UpdateInfoText = status.Message;
+        UpdateDetailText = status.RepoFound
+            ? $"Branche {status.Branch} · commit {status.ShortCommit} du {status.CommitDate}"
+            : "";
+        UpdateAvailable = status.Behind > 0;
+
+        _updateBusy = false;
+        CheckUpdateCommand.RaiseCanExecuteChanged();
+        ApplyUpdateCommand.RaiseCanExecuteChanged();
+        _activityLog.Log(ActivityCategory.Reglages, "Vérification des mises à jour — " + status.Message);
+    }
+
+    private async Task ApplyUpdateAsync()
+    {
+        if (MessageBox.Show(
+                "Mettre à jour l'application depuis la branche 0.1 ?\n" +
+                "Un fast-forward git sera effectué ; recompilez / relancez ensuite.",
+                "Heure+", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return;
+
+        _updateBusy = true;
+        CheckUpdateCommand.RaiseCanExecuteChanged();
+        ApplyUpdateCommand.RaiseCanExecuteChanged();
+        UpdateInfoText = "Mise à jour en cours…";
+
+        var (ok, output) = await Task.Run(() => _update.Update());
+
+        UpdateInfoText = output;
+        if (ok)
+        {
+            UpdateAvailable = false;
+            _activityLog.Log(ActivityCategory.Reglages, "Mise à jour appliquée depuis origin/0.1");
+        }
+
+        _updateBusy = false;
+        CheckUpdateCommand.RaiseCanExecuteChanged();
+        ApplyUpdateCommand.RaiseCanExecuteChanged();
     }
 
     // ---------- À propos ----------

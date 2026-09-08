@@ -1,0 +1,53 @@
+<Window x:Class="HeurePlus.Views.RangeDeleteWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:HeurePlus.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:RangeDeleteViewModel}"
+        Title="Supprimer une période" Height="290" Width="440"
+        Icon="/HeurePlus;component/heureplus.ico"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        FontFamily="{StaticResource Font.Text}" FontSize="14" Language="fr-FR"
+        Background="{DynamicResource Brush.Bg}"
+        TextElement.Foreground="{DynamicResource Brush.Text}"
+        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Supprimer une période" Style="{StaticResource PageTitle}" FontSize="20" Margin="0,0,0,16" />
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Text="DU" Style="{StaticResource FieldLabel}" />
+                <DatePicker SelectedDate="{Binding StartDate}" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="AU" Style="{StaticResource FieldLabel}" />
+                <DatePicker SelectedDate="{Binding EndDate}" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock Grid.Row="2" Text="{Binding CountText}" Style="{StaticResource Muted}" Margin="0,16,0,0"
+                   Foreground="{DynamicResource Brush.Danger}" VerticalAlignment="Top" TextWrapping="Wrap" />
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Style="{StaticResource SubtleButton}" Content="Annuler" Command="{Binding CancelCommand}" />
+            <Button Style="{StaticResource GhostButton}" Content="Supprimer" Margin="10,0,0,0"
+                    Foreground="{DynamicResource Brush.Danger}" Command="{Binding ConfirmCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>

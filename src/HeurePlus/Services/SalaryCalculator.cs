@@ -28,15 +28,20 @@ public static class SalaryCalculator
         return normalPay + overtimePay;
     }
 
-    public static SalaryResult Estimate(IEnumerable<DayEntry> entries, SalarySettings settings)
+    public static SalaryResult Estimate(
+        IEnumerable<DayEntry> entries,
+        SalarySettings settings,
+        IEnumerable<AppliedPrime>? primes = null)
     {
         double normalHours = 0, overtimeHours = 0, normalPay = 0, overtimePay = 0;
+        int workedDays = 0;
 
         foreach (var entry in entries)
         {
             // Congés / repos ne produisent pas de rémunération dans cette estimation.
             if (!entry.Status.IsWorking()) continue;
 
+            workedDays++;
             double rate = RateOf(entry, settings);
 
             normalHours += entry.NormalHours;
@@ -47,7 +52,32 @@ public static class SalaryCalculator
                 : entry.OvertimeHours * rate;
         }
 
-        double gross = normalPay + overtimePay;
+        double baseGross = normalPay + overtimePay;
+        double workedHours = normalHours + Math.Max(0, overtimeHours);
+
+        var primeLines = new List<(string, double)>();
+        double primesTotal = 0;
+        if (primes is not null)
+        {
+            foreach (var p in primes)
+            {
+                if (!p.Enabled || p.Amount == 0) continue;
+                double value = p.Unit switch
+                {
+                    PrimeUnit.Mensuel => p.Amount,
+                    PrimeUnit.Fixe => p.Amount,
+                    PrimeUnit.ParJourTravaille => p.Amount * workedDays,
+                    PrimeUnit.ParHeure => p.Amount * workedHours,
+                    PrimeUnit.PourcentBrut => baseGross * p.Amount / 100.0,
+                    _ => 0
+                };
+                if (value == 0) continue;
+                primesTotal += value;
+                primeLines.Add((p.Name, value));
+            }
+        }
+
+        double gross = baseGross + primesTotal;
         double ifm = settings.ApplyEndOfMissionBonus ? gross * settings.EndOfMissionRate : 0;
         double icp = settings.ApplyPaidLeaveBonus ? (gross + ifm) * settings.PaidLeaveRate : 0;
 
@@ -57,6 +87,8 @@ public static class SalaryCalculator
             OvertimeHours = overtimeHours,
             NormalPay = normalPay,
             OvertimePay = overtimePay,
+            PrimesTotal = primesTotal,
+            PrimeLines = primeLines,
             EndOfMissionBonus = ifm,
             PaidLeaveBonus = icp
         };

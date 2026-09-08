@@ -68,8 +68,9 @@ public sealed class DashboardViewModel : ObservableObject
     private void Refresh()
     {
         var salary = _settingsRepo.LoadSalary();
+        var primes = _settingsRepo.LoadPrimes();
         var monthEntries = _entries.GetMonth(_month.Year, _month.Month);
-        var stats = StatsService.Month(_month.Year, _month.Month, monthEntries, salary);
+        var stats = StatsService.Month(_month.Year, _month.Month, monthEntries, salary, primes);
 
         TotalHoursText = Fmt.H(stats.TotalHours);
         OvertimeHoursText = Fmt.H(stats.OvertimeHours);

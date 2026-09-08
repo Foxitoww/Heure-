@@ -24,6 +24,12 @@ public sealed class SalarySettings
     /// <summary>Durée hebdomadaire de référence (information / repère).</summary>
     public double WeeklyHours { get; set; } = 35;
 
+    /// <summary>SMIC horaire brut de référence (à revaloriser quand le SMIC change).</summary>
+    public double SmicHourly { get; set; } = 11.88;
+
+    /// <summary>Coefficient appliqué au SMIC pour obtenir le taux (1.0 = SMIC, 1.1 = SMIC + 10 %).</summary>
+    public double SmicCoefficient { get; set; } = 1.0;
+
     public string Currency { get; set; } = "€";
 
     public SalarySettings Clone() => (SalarySettings)MemberwiseClone();

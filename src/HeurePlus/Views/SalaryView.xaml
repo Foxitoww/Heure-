@@ -7,11 +7,39 @@
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:SalaryViewModel}">
 
+    <UserControl.Resources>
+        <Style x:Key="Seg" TargetType="Button">
+            <Setter Property="MinHeight" Value="30" />
+            <Setter Property="Padding" Value="18,0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="B" Background="{TemplateBinding Background}" CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="B" Property="Background" Value="{DynamicResource Brush.SubtleHover}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Grid Style="{StaticResource PageRoot}">
         <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0">
-            <Grid Margin="32,26,32,32" MaxWidth="1120" HorizontalAlignment="Left">
+            <Grid Margin="32,26,32,32" MaxWidth="1150" HorizontalAlignment="Left">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1.1*" />
+                    <ColumnDefinition Width="1.25*" />
                     <ColumnDefinition Width="24" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
@@ -22,66 +50,203 @@
 
                 <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Margin="0,0,0,20">
                     <TextBlock Text="Salaire" Style="{StaticResource PageTitle}" />
-                    <TextBlock Text="Paramètres de rémunération et estimation à partir de vos saisies."
+                    <TextBlock Text="Paramètres de rémunération, primes et estimation à partir de vos saisies."
                                Style="{StaticResource PageSubtitle}" />
                 </StackPanel>
 
-                <!-- Paramètres -->
+                <!-- ================= Carte gauche ================= -->
                 <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Top">
                     <StackPanel>
-                        <TextBlock Text="Paramètres de calcul" Style="{StaticResource SectionTitle}" />
-
-                        <TextBlock Text="TAUX HORAIRE BRUT" Style="{StaticResource FieldLabel}" />
-                        <TextBox Text="{Binding HourlyRate}" Width="180" HorizontalAlignment="Left" Margin="0,0,0,16" />
-
-                        <TextBlock Text="COEFFICIENT DES HEURES SUPPLÉMENTAIRES" Style="{StaticResource FieldLabel}" />
-                        <TextBlock Text="1,25 correspond à une majoration de 25 %." Style="{StaticResource Caption}" Margin="0,0,0,5" />
-                        <TextBox Text="{Binding OvertimeMultiplier}" Width="180" HorizontalAlignment="Left" Margin="0,0,0,16" />
-
-                        <Border Style="{StaticResource Divider}" />
-
-                        <CheckBox Content="Indemnité de fin de mission (IFM / prime de précarité)" IsChecked="{Binding ApplyIfm}" />
-                        <StackPanel Orientation="Horizontal" Margin="30,4,0,10" IsEnabled="{Binding ApplyIfm}">
-                            <TextBox Text="{Binding IfmPercent}" Width="90" />
-                            <TextBlock Text="%" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource Brush.TextMuted}" />
-                        </StackPanel>
-
-                        <CheckBox Content="Indemnité compensatrice de congés payés (ICP)" IsChecked="{Binding ApplyIcp}" />
-                        <StackPanel Orientation="Horizontal" Margin="30,4,0,0" IsEnabled="{Binding ApplyIcp}">
-                            <TextBox Text="{Binding IcpPercent}" Width="90" />
-                            <TextBlock Text="%" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource Brush.TextMuted}" />
-                        </StackPanel>
-
-                        <Border Style="{StaticResource Divider}" />
-
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="16" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="DURÉE HEBDO. DE RÉFÉRENCE" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding WeeklyHours}" />
+                        <!-- Sélecteur de sous-onglet -->
+                        <Border Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="8" Padding="3"
+                                HorizontalAlignment="Left" Margin="0,0,0,18">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Paramètres" Command="{Binding ShowSectionParamsCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource Seg}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SectionIsParams}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Text}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Content="Primes" Command="{Binding ShowSectionPrimesCommand}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource Seg}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SectionIsPrimes}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource Brush.Surface}" />
+                                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Text}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
                             </StackPanel>
-                            <StackPanel Grid.Column="2">
-                                <TextBlock Text="DEVISE" Style="{StaticResource FieldLabel}" />
-                                <TextBox Text="{Binding Currency}" />
-                            </StackPanel>
-                        </Grid>
+                        </Border>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
-                            <Button Style="{StaticResource AccentButton}" Content="Enregistrer" Command="{Binding SaveCommand}" />
-                            <Button Style="{StaticResource SubtleButton}" Content="Réinitialiser" Margin="8,0,0,0" Command="{Binding ResetCommand}" />
+                        <!-- Section PARAMETRES -->
+                        <StackPanel Visibility="{Binding SectionIsParams, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="TAUX HORAIRE BRUT" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding HourlyRate}" Width="180" HorizontalAlignment="Left" Margin="0,0,0,14" />
+
+                            <Border Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="8" Padding="14" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="MISE À JOUR SELON LE SMIC" Style="{StaticResource FieldLabel}" />
+                                    <Grid Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="12" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="SMIC horaire brut" Style="{StaticResource Caption}" />
+                                            <TextBox Text="{Binding SmicHourly}" Width="96" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="× coefficient" Style="{StaticResource Caption}" />
+                                            <TextBox Text="{Binding SmicCoef}" Width="80" />
+                                        </StackPanel>
+                                        <Button Grid.Column="4" Style="{StaticResource GhostButton}" VerticalAlignment="Bottom"
+                                                Content="Appliquer au taux" Command="{Binding ApplySmicCommand}" />
+                                    </Grid>
+                                    <TextBlock Text="{Binding SmicComparisonText}" Style="{StaticResource Caption}"
+                                               TextWrapping="Wrap" Margin="0,8,0,0" />
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock Text="COEFFICIENT DES HEURES SUPPLÉMENTAIRES" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="1,25 correspond à une majoration de 25 %." Style="{StaticResource Caption}" Margin="0,0,0,5" />
+                            <TextBox Text="{Binding OvertimeMultiplier}" Width="180" HorizontalAlignment="Left" Margin="0,0,0,14" />
+
+                            <Border Style="{StaticResource Divider}" />
+
+                            <CheckBox Content="Indemnité de fin de mission (IFM / prime de précarité)" IsChecked="{Binding ApplyIfm}" />
+                            <StackPanel Orientation="Horizontal" Margin="30,4,0,10" IsEnabled="{Binding ApplyIfm}">
+                                <TextBox Text="{Binding IfmPercent}" Width="90" />
+                                <TextBlock Text="%" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource Brush.TextMuted}" />
+                            </StackPanel>
+
+                            <CheckBox Content="Indemnité compensatrice de congés payés (ICP)" IsChecked="{Binding ApplyIcp}" />
+                            <StackPanel Orientation="Horizontal" Margin="30,4,0,0" IsEnabled="{Binding ApplyIcp}">
+                                <TextBox Text="{Binding IcpPercent}" Width="90" />
+                                <TextBlock Text="%" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource Brush.TextMuted}" />
+                            </StackPanel>
+
+                            <Border Style="{StaticResource Divider}" />
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="16" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="DURÉE HEBDO. DE RÉFÉRENCE" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding WeeklyHours}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="DEVISE" Style="{StaticResource FieldLabel}" />
+                                    <TextBox Text="{Binding Currency}" />
+                                </StackPanel>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,20,0,0">
+                                <Button Style="{StaticResource AccentButton}" Content="Enregistrer" Command="{Binding SaveCommand}" />
+                                <Button Style="{StaticResource SubtleButton}" Content="Réinitialiser" Margin="8,0,0,0" Command="{Binding ResetCommand}" />
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Caption}" Margin="0,12,0,0"
+                                       Foreground="{DynamicResource Brush.Success}"
+                                       Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVis}}" />
                         </StackPanel>
 
-                        <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource Caption}" Margin="0,12,0,0"
-                                   Foreground="{DynamicResource Brush.Success}"
-                                   Visibility="{Binding StatusMessage, Converter={StaticResource NullOrEmptyToVis}}" />
+                        <!-- Section PRIMES -->
+                        <StackPanel Visibility="{Binding SectionIsPrimes, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="RECHERCHER UNE PRIME" Style="{StaticResource FieldLabel}" />
+                            <TextBox Text="{Binding PrimeSearch, UpdateSourceTrigger=PropertyChanged}"
+                                     Padding="10,0" Margin="0,0,0,10" />
+
+                            <Border Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="8" Padding="4" MaxHeight="260">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding PrimeResults}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid Margin="8,7">
+                                                    <StackPanel Margin="0,0,90,0">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" />
+                                                            <Border Style="{StaticResource Chip}" Margin="8,0,0,0" Padding="6,1">
+                                                                <TextBlock Text="{Binding Category}" FontSize="10"
+                                                                           Foreground="{DynamicResource Brush.TextMuted}" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <TextBlock Text="{Binding Description}" Style="{StaticResource Caption}"
+                                                                   TextWrapping="Wrap" Margin="0,2,0,0" />
+                                                    </StackPanel>
+                                                    <Button Style="{StaticResource GhostButton}" Content="Ajouter"
+                                                            HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                            MinHeight="28" Padding="12,0"
+                                                            Command="{Binding DataContext.AddPrimeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+
+                            <Border Style="{StaticResource Divider}" />
+
+                            <TextBlock Text="VOS PRIMES" Style="{StaticResource FieldLabel}" />
+                            <TextBlock Text="Aucune prime ajoutée. Cherchez ci-dessus et cliquez « Ajouter »."
+                                       Style="{StaticResource Caption}"
+                                       Visibility="{Binding HasPrimes, Converter={StaticResource BoolToVis}, ConverterParameter=invert}" />
+
+                            <ItemsControl ItemsSource="{Binding AppliedPrimes}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="6" Padding="12,10" Margin="0,0,0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrong}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock Text="{Binding UnitLabel}" Style="{StaticResource Caption}" />
+                                                </StackPanel>
+                                                <CheckBox Grid.Column="1" IsChecked="{Binding Enabled}" VerticalAlignment="Center"
+                                                          Margin="0,0,10,0" ToolTip="Inclure dans l'estimation" />
+                                                <TextBox Grid.Column="2" Text="{Binding Amount, UpdateSourceTrigger=LostFocus}"
+                                                         Width="80" VerticalAlignment="Center" />
+                                                <Button Grid.Column="3" Style="{StaticResource RoundIconButton}" Width="30" Height="30"
+                                                        Margin="6,0,0,0" FontFamily="{StaticResource Font.Icons}" Content="&#xE74D;"
+                                                        ToolTip="Retirer"
+                                                        Command="{Binding DataContext.RemovePrimeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Button Style="{StaticResource AccentButton}" Content="Enregistrer" Margin="0,10,0,0"
+                                    HorizontalAlignment="Left" Command="{Binding SaveCommand}" />
+                            <TextBlock Style="{StaticResource Caption}" Margin="0,10,0,0" TextWrapping="Wrap"
+                                       Text="Montants indicatifs — ajustez-les selon votre convention collective ou votre contrat. La prime de précarité et les congés payés ont leurs propres options dans « Paramètres »." />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
-                <!-- Estimation -->
+                <!-- ================= Estimation ================= -->
                 <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Top">
                     <StackPanel>
                         <TextBlock Text="Estimation du salaire" Style="{StaticResource SectionTitle}" />
@@ -105,6 +270,11 @@
                         <Grid Margin="0,3,0,10">
                             <TextBlock Text="Rémunération majorée" Foreground="{DynamicResource Brush.TextTertiary}" Margin="12,0,0,0" />
                             <TextBlock Text="{Binding OvertimePayText}" HorizontalAlignment="Right" Style="{StaticResource BodyStrong}" />
+                        </Grid>
+
+                        <Grid Margin="0,3,0,10" Visibility="{Binding ShowPrimesLine, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="+ Primes" Foreground="{DynamicResource Brush.TextMuted}" />
+                            <TextBlock Text="{Binding PrimesText}" HorizontalAlignment="Right" Style="{StaticResource BodyStrong}" />
                         </Grid>
 
                         <Border Style="{StaticResource Divider}" Margin="0,6" />

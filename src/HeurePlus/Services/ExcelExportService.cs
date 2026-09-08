@@ -119,6 +119,8 @@ public static class ExcelExportService
         Kv("Coeff. heures sup.", salary.OvertimeMultiplier, "0.00");
         Kv("Paie heures normales", stats.Salary.NormalPay, moneyFmt);
         Kv("Paie heures sup.", stats.Salary.OvertimePay, moneyFmt);
+        foreach (var (name, amount) in stats.Salary.PrimeLines)
+            Kv(name, amount, moneyFmt);
         Kv("Brut estimé", stats.Salary.Gross, moneyFmt);
         if (salary.ApplyEndOfMissionBonus)
             Kv($"IFM ({(salary.EndOfMissionRate * 100).ToString("0.##", Fmt.Fr)} %)",

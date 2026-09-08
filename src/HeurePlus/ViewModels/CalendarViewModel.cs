@@ -19,6 +19,7 @@ public sealed class CalendarViewModel : ObservableObject
     private readonly CycleRepository _cycleRepo;
     private readonly AppEvents _events;
     private readonly Func<EntryEditorViewModel, bool?> _showEditor;
+    private readonly Func<RangeDeleteViewModel, bool?> _showRangeDelete;
 
     private DayOfWeek _firstDayOfWeek;
 
@@ -28,7 +29,8 @@ public sealed class CalendarViewModel : ObservableObject
         ActivityLogRepository activityLog,
         CycleRepository cycleRepo,
         AppEvents events,
-        Func<EntryEditorViewModel, bool?> showEditor)
+        Func<EntryEditorViewModel, bool?> showEditor,
+        Func<RangeDeleteViewModel, bool?> showRangeDelete)
     {
         _repo = repo;
         _settingsRepo = settingsRepo;
@@ -36,6 +38,7 @@ public sealed class CalendarViewModel : ObservableObject
         _cycleRepo = cycleRepo;
         _events = events;
         _showEditor = showEditor;
+        _showRangeDelete = showRangeDelete;
 
         _firstDayOfWeek = settingsRepo.LoadApp().FirstDayOfWeek;
         _visibleMonth = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
@@ -49,6 +52,7 @@ public sealed class CalendarViewModel : ObservableObject
         AddCycleCommand = new RelayCommand(_ => OpenEditor(EntryKind.Cycle));
         EditSelectedCommand = new RelayCommand(_ => OpenEditor(EntryKind.Day), _ => SelectedDay is not null);
         DeleteSelectedCommand = new RelayCommand(_ => DeleteSelected(), _ => SelectedDay?.Entry is not null);
+        DeleteRangeCommand = new RelayCommand(_ => DeleteRange());
         EditCycleCommand = new RelayCommand(_ => EditCycle(), _ => _selectedDayCycle is not null);
 
         _events.EntriesChanged += ReloadKeepingSelection;
@@ -105,6 +109,7 @@ public sealed class CalendarViewModel : ObservableObject
     public RelayCommand AddCycleCommand { get; }
     public RelayCommand EditSelectedCommand { get; }
     public RelayCommand DeleteSelectedCommand { get; }
+    public RelayCommand DeleteRangeCommand { get; }
     public RelayCommand EditCycleCommand { get; }
 
     // ---------- Logique ----------
@@ -211,6 +216,14 @@ public sealed class CalendarViewModel : ObservableObject
             var target = Days.FirstOrDefault(c => c.Date == reselect);
             if (target is not null) SelectedDay = target;
         }
+    }
+
+    private void DeleteRange()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        bool todayVisible = today.Month == _visibleMonth.Month && today.Year == _visibleMonth.Year;
+        DateOnly anchor = SelectedDay?.Date ?? (todayVisible ? today : _visibleMonth);
+        _showRangeDelete(new RangeDeleteViewModel(_repo, _activityLog, anchor));
     }
 
     private void DeleteSelected()

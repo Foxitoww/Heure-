@@ -9,7 +9,8 @@ namespace HeurePlus.Services;
 /// <summary>Construit les agrégats mensuels (tableau de bord, exports).</summary>
 public static class StatsService
 {
-    public static MonthStats Month(int year, int month, IReadOnlyList<DayEntry> monthEntries, SalarySettings salary)
+    public static MonthStats Month(int year, int month, IReadOnlyList<DayEntry> monthEntries,
+        SalarySettings salary, IEnumerable<AppliedPrime>? primes = null)
     {
         int daysInMonth = DateTime.DaysInMonth(year, month);
         var stats = new MonthStats
@@ -55,7 +56,7 @@ public static class StatsService
         }
         stats.HoursByWeek = weekBuckets.Select(kv => ($"S{kv.Key}", kv.Value)).ToList();
 
-        stats.Salary = SalaryCalculator.Estimate(monthEntries, salary);
+        stats.Salary = SalaryCalculator.Estimate(monthEntries, salary, primes);
         return stats;
     }
 }
