@@ -37,7 +37,8 @@
 
                 <!-- Profil actif -->
                 <Button DockPanel.Dock="Top" Style="{StaticResource SubtleButton}" Margin="14,0,14,10"
-                        HorizontalContentAlignment="Left" Command="{Binding SwitchProfileCommand}" ToolTip="Changer de profil">
+                        HorizontalContentAlignment="Left" Command="{Binding SwitchProfileCommand}" ToolTip="Changer de profil"
+                        AutomationProperties.Name="Changer de profil">
                     <StackPanel Orientation="Horizontal">
                         <Border Width="28" Height="28" CornerRadius="14"
                                 Background="{Binding ProfileColorHex, Converter={StaticResource HexToBrush}}">

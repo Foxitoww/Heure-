@@ -31,6 +31,7 @@
                     <DataTemplate>
                         <Grid Margin="12">
                             <Button Style="{StaticResource PlainButton}"
+                                    AutomationProperties.Name="{Binding Name}"
                                     Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                     CommandParameter="{Binding}">
                                 <StackPanel Width="132">
@@ -89,10 +90,12 @@
                                 </StackPanel.Style>
                                 <Button Style="{StaticResource RoundIconButton}" Width="26" Height="26"
                                         Content="&#xE70F;" ToolTip="Modifier"
+                                        AutomationProperties.Name="{Binding Name, StringFormat='Modifier le profil {0}'}"
                                         Command="{Binding DataContext.EditCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}" />
                                 <Button Style="{StaticResource RoundIconButton}" Width="26" Height="26"
                                         Content="&#xE74D;" ToolTip="Supprimer"
+                                        AutomationProperties.Name="{Binding Name, StringFormat='Supprimer le profil {0}'}"
                                         Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                         CommandParameter="{Binding}" />
                             </StackPanel>
