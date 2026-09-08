@@ -44,6 +44,14 @@ public sealed class EntryEditorViewModel : ObservableObject
         _endDate = _date.AddDays(13);
         _customRate = salary.HourlyRate;
 
+        // Nouveau cycle : par défaut, toute la plage du mois de la date d'ancrage.
+        if (editCycle is null && _kind == EntryKind.Cycle)
+        {
+            var firstOfMonth = new DateOnly(date.Year, date.Month, 1);
+            _startDate = firstOfMonth.ToDateTime(default);
+            _endDate = firstOfMonth.AddMonths(1).AddDays(-1).ToDateTime(default);
+        }
+
         SaveCommand = new RelayCommand(_ => Save());
         CancelCommand = new RelayCommand(_ => CloseRequested?.Invoke(false));
         ComputeFromScheduleCommand = new RelayCommand(_ => ComputeFromSchedule());

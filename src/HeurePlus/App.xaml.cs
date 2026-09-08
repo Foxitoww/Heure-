@@ -60,8 +60,19 @@ public partial class App : Application
             return window.ShowDialog();
         };
 
+        Func<CyclesViewModel, bool?> showCyclesManager = vm =>
+        {
+            var window = new CyclesWindow
+            {
+                DataContext = vm,
+                Owner = Current.MainWindow
+            };
+            WindowEffects.Apply(window, theme.Current == Models.AppTheme.Dark);
+            return window.ShowDialog();
+        };
+
         var main = new MainViewModel(
-            new CalendarViewModel(entryRepo, settingsRepo, activityLog, cycleRepo, events, showEditor, showRangeDelete),
+            new CalendarViewModel(entryRepo, settingsRepo, activityLog, cycleRepo, events, showEditor, showRangeDelete, showCyclesManager),
             new SalaryViewModel(entryRepo, settingsRepo, activityLog, events),
             new CalculatorViewModel(),
             new DashboardViewModel(entryRepo, settingsRepo, events),

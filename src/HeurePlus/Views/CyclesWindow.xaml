@@ -1,0 +1,73 @@
+<Window x:Class="HeurePlus.Views.CyclesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:HeurePlus.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance vm:CyclesViewModel}"
+        Title="Cycles" Height="520" Width="620"
+        Icon="/HeurePlus;component/heureplus.ico"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        FontFamily="{StaticResource Font.Text}" FontSize="14" Language="fr-FR"
+        Background="{DynamicResource Brush.Bg}"
+        TextElement.Foreground="{DynamicResource Brush.Text}"
+        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True">
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Cycles" Style="{StaticResource PageTitle}" FontSize="20" Margin="0,0,0,4" />
+        <TextBlock Grid.Row="1" Style="{StaticResource Caption}" Margin="0,0,0,14"
+                   Text="Créez un cycle par période (par exemple un par mois) ; chaque cycle peut avoir un modèle différent." />
+
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="6">
+            <Grid>
+                <StackPanel Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}}"
+                            HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="Aucun cycle enregistré." Style="{StaticResource Muted}" HorizontalAlignment="Center" />
+                    <Button Style="{StaticResource AccentButton}" Content="＋  Nouveau cycle" Margin="0,12,0,0"
+                            HorizontalAlignment="Center" Command="{Binding NewCycleCommand}" />
+                </StackPanel>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVis}, ConverterParameter=invert}">
+                    <ItemsControl ItemsSource="{Binding Cycles}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource Brush.SurfaceAlt}" CornerRadius="6" Padding="12,10" Margin="4">
+                                    <Grid>
+                                        <StackPanel Margin="0,0,150,0">
+                                            <TextBlock Text="{Binding RangeLabel}" Style="{StaticResource BodyStrong}" />
+                                            <TextBlock Text="{Binding PatternText}" Style="{StaticResource Caption}"
+                                                       TextTrimming="CharacterEllipsis" Margin="0,2,0,0" />
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <Button Style="{StaticResource GhostButton}" Content="Modifier" MinHeight="28"
+                                                    Padding="12,0" Command="{Binding EditCommand}" />
+                                            <Button Style="{StaticResource RoundIconButton}" Width="30" Height="30" Margin="6,0,0,0"
+                                                    FontFamily="{StaticResource Font.Icons}" Content="&#xE74D;"
+                                                    Foreground="{DynamicResource Brush.Danger}" ToolTip="Supprimer"
+                                                    Command="{Binding DeleteCommand}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Style="{StaticResource AccentButton}" Content="＋  Nouveau cycle" Command="{Binding NewCycleCommand}" />
+            <Button Style="{StaticResource SubtleButton}" Content="Fermer" Margin="10,0,0,0" Command="{Binding CloseCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>

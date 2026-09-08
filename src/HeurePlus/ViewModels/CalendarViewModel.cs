@@ -20,6 +20,7 @@ public sealed class CalendarViewModel : ObservableObject
     private readonly AppEvents _events;
     private readonly Func<EntryEditorViewModel, bool?> _showEditor;
     private readonly Func<RangeDeleteViewModel, bool?> _showRangeDelete;
+    private readonly Func<CyclesViewModel, bool?> _showCyclesManager;
 
     private DayOfWeek _firstDayOfWeek;
 
@@ -30,7 +31,8 @@ public sealed class CalendarViewModel : ObservableObject
         CycleRepository cycleRepo,
         AppEvents events,
         Func<EntryEditorViewModel, bool?> showEditor,
-        Func<RangeDeleteViewModel, bool?> showRangeDelete)
+        Func<RangeDeleteViewModel, bool?> showRangeDelete,
+        Func<CyclesViewModel, bool?> showCyclesManager)
     {
         _repo = repo;
         _settingsRepo = settingsRepo;
@@ -39,6 +41,7 @@ public sealed class CalendarViewModel : ObservableObject
         _events = events;
         _showEditor = showEditor;
         _showRangeDelete = showRangeDelete;
+        _showCyclesManager = showCyclesManager;
 
         _firstDayOfWeek = settingsRepo.LoadApp().FirstDayOfWeek;
         _visibleMonth = new DateOnly(DateTime.Today.Year, DateTime.Today.Month, 1);
@@ -49,7 +52,7 @@ public sealed class CalendarViewModel : ObservableObject
         SelectDayCommand = new RelayCommand(p => { if (p is DayCellViewModel c) SelectedDay = c; });
         AddEntryCommand = new RelayCommand(_ => OpenEditor(EntryKind.Day));
         AddPeriodCommand = new RelayCommand(_ => OpenEditor(EntryKind.Period));
-        AddCycleCommand = new RelayCommand(_ => OpenEditor(EntryKind.Cycle));
+        AddCycleCommand = new RelayCommand(_ => OpenCyclesManager());
         EditSelectedCommand = new RelayCommand(_ => OpenEditor(EntryKind.Day), _ => SelectedDay is not null);
         DeleteSelectedCommand = new RelayCommand(_ => DeleteSelected(), _ => SelectedDay?.Entry is not null);
         DeleteRangeCommand = new RelayCommand(_ => DeleteRange());
@@ -209,6 +212,17 @@ public sealed class CalendarViewModel : ObservableObject
         var editor = new EntryEditorViewModel(_repo, _activityLog, _cycleRepo, salary, anchor, null,
             EntryKind.Cycle, _selectedDayCycle);
         RunEditor(editor, SelectedDay?.Date ?? anchor);
+    }
+
+    private void OpenCyclesManager()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        bool todayVisible = today.Month == _visibleMonth.Month && today.Year == _visibleMonth.Year;
+        var month = todayVisible ? today : _visibleMonth;
+
+        var manager = new CyclesViewModel(_cycleRepo, _repo, _activityLog, _settingsRepo, _showEditor, month);
+        _showCyclesManager(manager);
+        LoadMonth();
     }
 
     private void RunEditor(EntryEditorViewModel editor, DateOnly reselect)
