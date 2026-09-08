@@ -163,6 +163,129 @@ public static class PrimeCatalog
         new("Prime de feu continu / sujétion continue", "Industrie / travail posté", "Installations fonctionnant 24h/24, 7j/7.", PrimeUnit.Mensuel, 90),
         new("Prime de production / cadence", "Industrie / travail posté", "Objectifs de cadence ou de rendement de ligne.", PrimeUnit.Mensuel, 110),
 
+        // Épargne salariale et partage de la valeur
+        new("Prime de participation aux bénéfices", "Épargne salariale", "Accord de participation : quote-part des bénéfices, souvent placée.", PrimeUnit.Fixe, 1500),
+        new("Prime d'intéressement", "Épargne salariale", "Accord d'intéressement, liée aux résultats ou à la performance.", PrimeUnit.Fixe, 1000),
+        new("Abondement de l'employeur (PEE / PER)", "Épargne salariale", "Complément versé par l'employeur sur un plan d'épargne.", PrimeUnit.Fixe, 500),
+        new("Supplément d'intéressement ou de participation", "Épargne salariale", "Versement supplémentaire décidé par l'employeur.", PrimeUnit.Fixe, 0),
+
+        // Rémunération légale : heures et sujétions
+        new("Majoration légale des heures de nuit", "Rémunération légale", "Contrepartie des heures effectuées la nuit (accord ou usage).", PrimeUnit.ParHeure, 1.00),
+        new("Majoration pour travail du dimanche", "Rémunération légale", "Majoration horaire des heures du dimanche.", PrimeUnit.ParHeure, 2.00),
+        new("Majoration des jours fériés travaillés", "Rémunération légale", "Majoration horaire un jour férié.", PrimeUnit.ParHeure, 3.00),
+        new("Repos compensateur payé", "Rémunération légale", "Contrepartie en argent d'un repos compensateur non pris.", PrimeUnit.ParHeure, 12),
+        new("Indemnité forfaitaire pour travaux supplémentaires (IFTS)", "Rémunération légale", "Fonction publique : forfait pour heures supplémentaires des cadres.", PrimeUnit.Mensuel, 90),
+        new("Indemnité horaire pour travaux supplémentaires (IHTS)", "Rémunération légale", "Fonction publique : heures supplémentaires des agents de catégorie B et C.", PrimeUnit.ParHeure, 18),
+        new("Contrepartie financière de clause de non-concurrence", "Rémunération légale", "Versée après la rupture si une clause de non-concurrence s'applique.", PrimeUnit.Mensuel, 300),
+
+        // Sécurité privée
+        new("Prime de panier (sécurité privée)", "Sécurité privée", "Repas pendant le service de sécurité.", PrimeUnit.ParJourTravaille, 4.22),
+        new("Prime d'habillage / déshabillage (sécurité)", "Sécurité privée", "Temps de mise en tenue avant et après le service.", PrimeUnit.Mensuel, 20),
+        new("Prime de nettoyage des tenues", "Sécurité privée", "Entretien de l'uniforme par l'agent.", PrimeUnit.Mensuel, 15),
+        new("Prime de chien (agent cynophile)", "Sécurité privée", "Entretien et détention du chien de sécurité.", PrimeUnit.Mensuel, 100),
+        new("Prime de responsable de site (sécurité)", "Sécurité privée", "Coordination d'une équipe sur un site.", PrimeUnit.Mensuel, 80),
+        new("Prime de qualification (SSIAP, agent cynophile…)", "Sécurité privée", "Diplôme ou certification de sécurité.", PrimeUnit.Mensuel, 40),
+
+        // Propreté
+        new("Prime d'expérience (propreté)", "Propreté", "Prime d'ancienneté propre à la convention propreté.", PrimeUnit.Mensuel, 25),
+        new("Prime de transport (propreté)", "Propreté", "Participation aux trajets pour les chantiers de nettoyage.", PrimeUnit.Mensuel, 30),
+        new("Prime de tuteur (propreté)", "Propreté", "Accompagnement d'un nouvel agent.", PrimeUnit.Mensuel, 30),
+        new("Prime de travaux exceptionnels (propreté)", "Propreté", "Remise en état, chantier ponctuel lourd.", PrimeUnit.Fixe, 50),
+        new("Prime de remplacement (propreté)", "Propreté", "Remplacement d'un collègue absent sur un autre site.", PrimeUnit.ParJourTravaille, 5),
+
+        // Services à la personne et aide à domicile
+        new("Élément complémentaire de rémunération — diplôme", "Aide à domicile", "Complément lié à un diplôme du secteur (convention de la branche de l'aide à domicile).", PrimeUnit.Mensuel, 63),
+        new("Élément complémentaire de rémunération — ancienneté", "Aide à domicile", "Complément d'ancienneté de la branche de l'aide à domicile.", PrimeUnit.PourcentBrut, 2),
+        new("Indemnité kilométrique (aide à domicile)", "Aide à domicile", "Trajets entre deux interventions avec véhicule personnel.", PrimeUnit.ParJourTravaille, 8),
+        new("Indemnité de temps de déplacement", "Aide à domicile", "Temps passé entre deux domiciles d'usagers.", PrimeUnit.ParJourTravaille, 4),
+        new("Prime de tutorat (aide à domicile)", "Aide à domicile", "Accompagnement d'un nouvel intervenant.", PrimeUnit.Mensuel, 40),
+        new("Prime dimanches et jours fériés (aide à domicile)", "Aide à domicile", "Interventions le dimanche ou un jour férié.", PrimeUnit.ParJourTravaille, 20),
+
+        // Animation et socioculturel
+        new("Reconstitution de carrière (animation)", "Animation / socioculturel", "Réévaluation liée à l'expérience, convention ECLAT.", PrimeUnit.Mensuel, 30),
+        new("Déroulement de carrière (animation)", "Animation / socioculturel", "Progression automatique de la convention ECLAT.", PrimeUnit.Mensuel, 20),
+        new("Prime de coupure (animation)", "Animation / socioculturel", "Journée fractionnée (périscolaire matin et soir).", PrimeUnit.ParJourTravaille, 6),
+        new("Indemnité de petites vacances", "Animation / socioculturel", "Travail pendant les vacances scolaires.", PrimeUnit.Fixe, 100),
+        new("Prime d'internat / de séjour", "Animation / socioculturel", "Encadrement en séjour avec hébergement.", PrimeUnit.ParJourTravaille, 30),
+
+        // Banque et assurance
+        new("Prime de vacances (banque)", "Banque / assurance", "Versement conventionnel avant l'été.", PrimeUnit.Fixe, 700),
+        new("Prime d'expérience professionnelle", "Banque / assurance", "Ancienneté et expérience acquise.", PrimeUnit.PourcentBrut, 3),
+        new("Part variable / bonus commercial", "Banque / assurance", "Objectifs commerciaux individuels ou collectifs.", PrimeUnit.Fixe, 1500),
+        new("Prime de guichet / de caisse (banque)", "Banque / assurance", "Tenue de guichet et manipulation d'espèces.", PrimeUnit.Mensuel, 40),
+
+        // Commerce et grande distribution
+        new("Remise sur achats / avantage personnel", "Commerce / distribution", "Réduction sur les produits de l'enseigne.", PrimeUnit.Mensuel, 30),
+        new("Prime d'objectif magasin", "Commerce / distribution", "Atteinte du chiffre d'affaires du point de vente.", PrimeUnit.Mensuel, 80),
+        new("Prime de mise en rayon / manutention", "Commerce / distribution", "Réassort, port de charges, gestion des palettes.", PrimeUnit.ParJourTravaille, 4),
+        new("Prime de démarque / inventaire", "Commerce / distribution", "Maîtrise de la démarque inconnue, participation aux inventaires.", PrimeUnit.Mensuel, 25),
+        new("Prime de travail en soirée (commerce)", "Commerce / distribution", "Heures effectuées en nocturne ou en fermeture.", PrimeUnit.ParHeure, 1.00),
+
+        // Métiers de bouche et artisanat
+        new("Prime de fin d'année (boulangerie)", "Métiers de bouche", "Gratification annuelle de la convention boulangerie-pâtisserie.", PrimeUnit.Fixe, 200),
+        new("Prime de nuit (boulangerie-pâtisserie)", "Métiers de bouche", "Fournée de nuit et petit matin.", PrimeUnit.ParHeure, 1.80),
+        new("Prime de froid (boucherie / marée)", "Métiers de bouche", "Travail prolongé en laboratoire réfrigéré.", PrimeUnit.ParHeure, 0.60),
+        new("Prime d'ancienneté (coiffure / esthétique)", "Métiers de bouche", "Ancienneté de la convention coiffure.", PrimeUnit.Mensuel, 25),
+        new("Prime de vente / de service (coiffure, esthétique)", "Métiers de bouche", "Vente de produits et prestations additionnelles.", PrimeUnit.PourcentBrut, 5),
+
+        // Santé — secteur privé
+        new("Prime décentralisée (hospitalisation privée)", "Santé privée", "Prime annuelle conventionnelle, environ 5 % du salaire brut.", PrimeUnit.PourcentBrut, 5),
+        new("Ségur (hospitalisation privée)", "Santé privée", "Transposition de la revalorisation Ségur dans le secteur privé.", PrimeUnit.Mensuel, 238),
+        new("Prime dimanches et jours fériés (clinique)", "Santé privée", "Travail le dimanche ou un jour férié en établissement privé.", PrimeUnit.ParJourTravaille, 45),
+        new("Prime de nuit (clinique)", "Santé privée", "Heures de nuit en établissement de santé privé.", PrimeUnit.ParHeure, 1.30),
+
+        // Transport sanitaire (ambulanciers)
+        new("Indemnité de repas unique (ambulancier)", "Transport sanitaire", "Repas pris en déplacement, convention transport sanitaire.", PrimeUnit.ParJourTravaille, 9.90),
+        new("Indemnité de repas spéciale (ambulancier)", "Transport sanitaire", "Repas décalé lié aux horaires de service.", PrimeUnit.ParJourTravaille, 8),
+        new("Indemnité dimanches et jours fériés (ambulancier)", "Transport sanitaire", "Service un dimanche ou un jour férié.", PrimeUnit.ParJourTravaille, 30),
+        new("Indemnité de permanence (ambulancier)", "Transport sanitaire", "Permanence de garde départementale.", PrimeUnit.ParJourTravaille, 20),
+
+        // Maritime et pêche
+        new("Rémunération à la part (pêche)", "Maritime / pêche", "Part du produit de la vente selon le rôle d'équipage.", PrimeUnit.Fixe, 0),
+        new("Prime de marée", "Maritime / pêche", "Résultat d'une sortie de pêche.", PrimeUnit.Fixe, 150),
+        new("Indemnité de nourriture (marins)", "Maritime / pêche", "Nourriture à bord non fournie.", PrimeUnit.ParJourTravaille, 20),
+        new("Prime de navigation", "Maritime / pêche", "Temps passé en mer.", PrimeUnit.Mensuel, 120),
+        new("Prime de quart", "Maritime / pêche", "Tenue du quart à la passerelle ou à la machine.", PrimeUnit.ParJourTravaille, 10),
+
+        // Agriculture et paysage
+        new("Prime de récolte / vendanges", "Agriculture", "Travaux saisonniers de récolte.", PrimeUnit.ParJourTravaille, 15),
+        new("Prime de traite", "Agriculture", "Traite matin et soir des troupeaux laitiers.", PrimeUnit.Mensuel, 80),
+        new("Prime de conduite d'engins agricoles", "Agriculture", "Conduite de tracteurs et machines spécialisées.", PrimeUnit.Mensuel, 60),
+        new("Avantage en nature logement (agricole)", "Agriculture", "Logement de fonction fourni sur l'exploitation.", PrimeUnit.Mensuel, 100),
+        new("Prime de saison (agriculture)", "Agriculture", "Renfort pour un pic d'activité saisonnier.", PrimeUnit.Fixe, 300),
+
+        // Médias, spectacle et sport
+        new("Indemnité de frais d'emploi (journalistes)", "Médias / spectacle / sport", "Abattement de 30 % pour frais professionnels des journalistes.", PrimeUnit.PourcentBrut, 30),
+        new("Prime d'ancienneté (journalistes)", "Médias / spectacle / sport", "Barème d'ancienneté de la convention des journalistes.", PrimeUnit.Mensuel, 30),
+        new("Prime de match (sportif professionnel)", "Médias / spectacle / sport", "Résultat sportif : victoire, qualification, maintien.", PrimeUnit.Fixe, 500),
+        new("Prime d'image / de contrat", "Médias / spectacle / sport", "Exploitation du nom et de l'image.", PrimeUnit.Fixe, 0),
+        new("Défraiement tournage / spectacle", "Médias / spectacle / sport", "Repas et déplacements sur un tournage ou une tournée.", PrimeUnit.ParJourTravaille, 40),
+
+        // Fonction publique — indemnités complémentaires
+        new("Forfait télétravail", "Fonction publique", "Indemnisation forfaitaire des jours télétravaillés.", PrimeUnit.ParJourTravaille, 2.88),
+        new("Prise en charge des titres de transport (50 %)", "Fonction publique", "Remboursement de la moitié de l'abonnement transports en commun.", PrimeUnit.Mensuel, 40),
+        new("Indemnité de jury ou d'examen", "Fonction publique", "Participation à un jury de concours ou d'examen.", PrimeUnit.Fixe, 50),
+        new("Indemnité de fonctions itinérantes", "Fonction publique", "Déplacements fréquents inhérents à la fonction.", PrimeUnit.Mensuel, 30),
+        new("Indemnité d'administration et de technicité (IAT)", "Fonction publique", "Indemnité historique de catégorie C et B (hors RIFSEEP).", PrimeUnit.Mensuel, 50),
+        new("Indemnité de régie / de caisse", "Fonction publique", "Responsabilité pécuniaire d'un régisseur d'avances ou de recettes.", PrimeUnit.Mensuel, 30),
+        new("Prime de restructuration de service", "Fonction publique", "Accompagnement d'une réorganisation avec mobilité.", PrimeUnit.Fixe, 0),
+
+        // Défense et sécurité intérieure
+        new("Indemnité pour charges militaires (ICM)", "Défense / sécurité intérieure", "Sujétions de la vie militaire et mobilité géographique.", PrimeUnit.Mensuel, 200),
+        new("Indemnité de service en campagne", "Défense / sécurité intérieure", "Exercices et manœuvres hors garnison.", PrimeUnit.ParJourTravaille, 15),
+        new("Prime de haute technicité / qualification (militaire)", "Défense / sécurité intérieure", "Spécialité rare ou qualification supérieure.", PrimeUnit.Mensuel, 150),
+        new("Indemnité de police judiciaire", "Défense / sécurité intérieure", "Officiers et agents de police judiciaire.", PrimeUnit.Mensuel, 130),
+        new("Prime de sujétion spéciale pénitentiaire", "Défense / sécurité intérieure", "Environ 28 % du traitement brut des surveillants pénitentiaires.", PrimeUnit.PourcentBrut, 28),
+        new("Prime de fidélisation (zones difficiles)", "Défense / sécurité intérieure", "Maintien sur un territoire ou un service en tension.", PrimeUnit.Fixe, 900),
+
+        // Enseignement — compléments
+        new("Indemnité pour mission particulière (IMP)", "Enseignement", "Coordination de discipline, référent numérique, projets…", PrimeUnit.Fixe, 1250),
+        new("Indemnité de professeur documentaliste", "Enseignement", "Exercice au CDI d'un établissement.", PrimeUnit.Mensuel, 100),
+        new("Prime d'équipement informatique (enseignants)", "Enseignement", "Forfait annuel pour l'équipement personnel.", PrimeUnit.Fixe, 176),
+        new("Indemnité de direction d'école", "Enseignement", "Fonction de directeur ou directrice d'école.", PrimeUnit.Mensuel, 50),
+        new("Prime d'entrée dans le métier", "Enseignement", "Versée en début de carrière, les premières années.", PrimeUnit.Fixe, 1500),
+        new("Indemnité de tutorat de stagiaire", "Enseignement", "Accompagnement d'un professeur stagiaire.", PrimeUnit.Fixe, 1250),
+
         // Événements / divers
         new("Prime de cooptation / parrainage", "Événements / divers", "Recommandation d'un candidat finalement embauché.", PrimeUnit.Fixe, 500),
         new("Prime de médaille du travail", "Événements / divers", "Remise d'une médaille d'honneur du travail.", PrimeUnit.Fixe, 300),
