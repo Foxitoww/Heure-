@@ -1100,6 +1100,11 @@
                         <Border x:Name="TodayRing" CornerRadius="8" Opacity="0"
                                 BorderBrush="{DynamicResource Brush.Accent}" BorderThickness="1.5" />
 
+                        <TextBlock x:Name="HolidayText" Text="{Binding HolidayName}" Visibility="Collapsed"
+                                   HorizontalAlignment="Center" VerticalAlignment="Top" Margin="4,7,4,0"
+                                   FontSize="9" TextAlignment="Center" TextTrimming="CharacterEllipsis"
+                                   Foreground="{DynamicResource Brush.Accent}" />
+
                         <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                             <TextBlock x:Name="DayText" Text="{Binding DayNumber}" HorizontalAlignment="Center"
                                        FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Text}" />
@@ -1119,6 +1124,9 @@
                         </DataTrigger>
                         <DataTrigger Binding="{Binding HasEntry}" Value="True">
                             <Setter TargetName="StatusBar" Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsHoliday}" Value="True">
+                            <Setter TargetName="HolidayText" Property="Visibility" Value="Visible" />
                         </DataTrigger>
                         <DataTrigger Binding="{Binding IsToday}" Value="True">
                             <Setter TargetName="TodayRing" Property="Opacity" Value="1" />
@@ -1144,6 +1152,7 @@
                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
                             <Setter TargetName="DayText" Property="Foreground" Value="{DynamicResource Brush.AccentText}" />
                             <Setter TargetName="HoursText" Property="Foreground" Value="{DynamicResource Brush.AccentText}" />
+                            <Setter TargetName="HolidayText" Property="Foreground" Value="{DynamicResource Brush.AccentText}" />
                             <Setter TargetName="TodayRing" Property="Opacity" Value="0" />
                             <Setter TargetName="StatusBar" Property="Background" Value="{DynamicResource Brush.AccentText}" />
                             <DataTrigger.EnterActions>

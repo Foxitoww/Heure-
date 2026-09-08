@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HeurePlus.Models;
 
 namespace HeurePlus.Services;
@@ -31,8 +32,12 @@ public static class SalaryCalculator
     public static SalaryResult Estimate(
         IEnumerable<DayEntry> entries,
         SalarySettings settings,
-        IEnumerable<AppliedPrime>? primes = null)
+        IEnumerable<AppliedPrime>? primes = null,
+        (DateOnly From, DateOnly To)? scope = null)
     {
+        var entryList = entries as IReadOnlyList<DayEntry> ?? entries.ToList();
+        entries = entryList;
+
         double normalHours = 0, overtimeHours = 0, normalPay = 0, overtimePay = 0;
         int workedDays = 0;
 
@@ -74,6 +79,18 @@ public static class SalaryCalculator
                 if (value == 0) continue;
                 primesTotal += value;
                 primeLines.Add((p.Name, value));
+            }
+        }
+
+        // Jours fériés chômés (français) rémunérés
+        if (settings.PayPublicHolidays && scope is { } s && settings.PublicHolidayHours > 0)
+        {
+            var (count, amount) = FrenchHolidays.UnworkedHolidayPay(
+                s.From, s.To, entryList, settings.PublicHolidayHours, settings.HourlyRate);
+            if (amount > 0)
+            {
+                primesTotal += amount;
+                primeLines.Add(($"Jours fériés chômés ({count})", amount));
             }
         }
 

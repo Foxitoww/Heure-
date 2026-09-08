@@ -35,6 +35,8 @@ public sealed class SettingsRepository
         WeeklyHours = GetDouble("salary.weeklyHours", 35),
         SmicHourly = GetDouble("salary.smic.hourly", 11.88),
         SmicCoefficient = GetDouble("salary.smic.coef", 1.0),
+        PayPublicHolidays = GetBool("salary.holidays.enabled", false),
+        PublicHolidayHours = GetDouble("salary.holidays.hours", 7),
         Currency = GetString("app.currency") ?? "€"
     };
 
@@ -51,6 +53,8 @@ public sealed class SettingsRepository
             ["salary.weeklyHours"] = s.WeeklyHours.ToString(Inv),
             ["salary.smic.hourly"] = s.SmicHourly.ToString(Inv),
             ["salary.smic.coef"] = s.SmicCoefficient.ToString(Inv),
+            ["salary.holidays.enabled"] = Bool(s.PayPublicHolidays),
+            ["salary.holidays.hours"] = s.PublicHolidayHours.ToString(Inv),
             ["app.currency"] = s.Currency
         });
         _events.RaiseSettingsChanged();

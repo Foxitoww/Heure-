@@ -171,7 +171,10 @@ public sealed class CalendarViewModel : ObservableObject
         for (int i = 0; i < TotalCells; i++)
         {
             var date = firstVisible.AddDays(i);
-            var cell = new DayCellViewModel(date, date.Month == firstOfMonth.Month && date.Year == firstOfMonth.Year);
+            var cell = new DayCellViewModel(date, date.Month == firstOfMonth.Month && date.Year == firstOfMonth.Year)
+            {
+                HolidayName = Services.FrenchHolidays.NameOf(date)
+            };
             if (entries.TryGetValue(date, out var entry)) cell.Entry = entry;
             Days.Add(cell);
         }

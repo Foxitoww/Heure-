@@ -133,9 +133,17 @@
                             </StackPanel>
 
                             <CheckBox Content="Indemnité compensatrice de congés payés (ICP)" IsChecked="{Binding ApplyIcp}" />
-                            <StackPanel Orientation="Horizontal" Margin="30,4,0,0" IsEnabled="{Binding ApplyIcp}">
+                            <StackPanel Orientation="Horizontal" Margin="30,4,0,10" IsEnabled="{Binding ApplyIcp}">
                                 <TextBox Text="{Binding IcpPercent}" Width="90" />
                                 <TextBlock Text="%" VerticalAlignment="Center" Margin="8,0,0,0" Foreground="{DynamicResource Brush.TextMuted}" />
+                            </StackPanel>
+
+                            <CheckBox Content="Payer les jours fériés chômés (fériés français, hors week-end)"
+                                      IsChecked="{Binding PayHolidays}" />
+                            <StackPanel Orientation="Horizontal" Margin="30,4,0,0" IsEnabled="{Binding PayHolidays}">
+                                <TextBox Text="{Binding HolidayHours}" Width="90" />
+                                <TextBlock Text="heures / jour férié" VerticalAlignment="Center" Margin="8,0,0,0"
+                                           Foreground="{DynamicResource Brush.TextMuted}" />
                             </StackPanel>
 
                             <Border Style="{StaticResource Divider}" />

@@ -116,6 +116,12 @@ public sealed class SalaryViewModel : ObservableObject
         set { if (SetProperty(ref _smicCoef, value)) OnPropertyChanged(nameof(SmicComparisonText)); }
     }
 
+    private bool _payHolidays;
+    public bool PayHolidays { get => _payHolidays; set { if (SetProperty(ref _payHolidays, value)) Recompute(); } }
+
+    private double _holidayHours;
+    public double HolidayHours { get => _holidayHours; set { if (SetProperty(ref _holidayHours, value)) Recompute(); } }
+
     public string SmicComparisonText
     {
         get
@@ -229,6 +235,8 @@ public sealed class SalaryViewModel : ObservableObject
         _weeklyHours = s.WeeklyHours;
         _smicHourly = s.SmicHourly;
         _smicCoef = s.SmicCoefficient;
+        _payHolidays = s.PayPublicHolidays;
+        _holidayHours = s.PublicHolidayHours;
         _currency = s.Currency;
 
         AppliedPrimes.Clear();
@@ -251,6 +259,8 @@ public sealed class SalaryViewModel : ObservableObject
         WeeklyHours = WeeklyHours,
         SmicHourly = SmicHourly,
         SmicCoefficient = SmicCoef,
+        PayPublicHolidays = PayHolidays,
+        PublicHolidayHours = HolidayHours,
         Currency = string.IsNullOrWhiteSpace(Currency) ? "€" : Currency
     };
 
@@ -276,7 +286,10 @@ public sealed class SalaryViewModel : ObservableObject
             ? _entries.GetAll()
             : _entries.GetRange(from.Value, to.Value);
 
-        var result = SalaryCalculator.Estimate(data, settings, AppliedPrimes.Select(v => v.Model));
+        (DateOnly, DateOnly)? holidayScope = from is { } f && to is { } t ? (f, t)
+            : data.Count > 0 ? (data[0].Date, data[^1].Date) : null;
+
+        var result = SalaryCalculator.Estimate(data, settings, AppliedPrimes.Select(v => v.Model), holidayScope);
 
         NormalHoursText = Fmt.H(result.NormalHours);
         NormalPayText = Fmt.Money(result.NormalPay, settings.Currency);

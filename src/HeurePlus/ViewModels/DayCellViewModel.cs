@@ -24,6 +24,11 @@ public sealed class DayCellViewModel : ObservableObject
 
     public int DayNumber => Date.Day;
 
+    /// <summary>Nom du jour férié français (null sinon), renseigné au chargement du mois.</summary>
+    public string? HolidayName { get; set; }
+
+    public bool IsHoliday => HolidayName is not null;
+
     private DayEntry? _entry;
     public DayEntry? Entry
     {

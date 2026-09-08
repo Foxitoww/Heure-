@@ -8,12 +8,12 @@ Application **Windows (WPF / .NET 8)** de suivi d'heures pour les travailleurs i
 
 | Onglet | Contenu |
 | --- | --- |
-| **Calendrier** | Calendrier mensuel, jour sélectionnable avec **bulle animée**, panneau de détails. Ajout d'une **journée**, d'une **période**, ou d'un **cycle** (rotation type *2/2*, *4/4*, *5/2*, *6/1*… avec les horaires propres à chaque jour du cycle). Statuts *Travail*, *Heures sup.*, *Congé*, *Repos*. Champ **heures sup. / retrait** : une valeur négative retire des heures (départ anticipé), payées au taux normal. Modes d'application : **Remplacer**, **Cumuler** (ajouter / retirer sans écraser le travail), **Ignorer les jours déjà remplis**. |
-| **Salaire** | Taux horaire, coefficient de majoration des heures sup., options **IFM** et **congés payés**. Estimation détaillée (ce mois, mois précédent, tout l'historique). |
+| **Calendrier** | Calendrier mensuel, jour sélectionnable avec **bulle animée**, panneau de détails. Ajout d'une **journée**, d'une **période**, ou d'un **cycle** (rotation *2/2*, *4/4*, *5/2*, *6/1*… avec les horaires propres à chaque jour ; option *travailler les week-ends* ; **cycle modifiable** après coup). Trait de statut coloré (travail bleu, heures sup. vert, retrait rouge, congé violet, repos jaune). Champ **heures sup. / retrait** : une valeur négative retire des heures (départ anticipé), payées au taux normal. Modes d'application : **Remplacer**, **Cumuler**, **Ignorer les jours remplis**. **Suppression multi-jours** par plage de dates. |
+| **Salaire** | Deux sous-onglets : **Paramètres** (taux horaire, coeff. heures sup., IFM, congés payés, **mise à jour selon le SMIC** avec coefficient) et **Primes** (recherche dans un catalogue de ~35 primes françaises, montant ajustable, intégrées à l'estimation et aux exports). Estimation détaillée (ce mois, mois précédent, tout l'historique). |
 | **Calculatrice** | Calculatrice classique (souris + clavier) et **conversions heures / minutes**. |
 | **Tableau de bord** | Totaux du mois + mini-graphiques par jour / semaine + répartition des jours. |
-| **Historique** | Journal horodaté des actions (saisies, périodes, cycles, suppressions, réglages, sauvegardes, exports). |
-| **Réglages** | Thème clair / sombre, premier jour de la semaine, devise, **sauvegarde / restauration** SQLite, **export PDF et Excel**. |
+| **Historique** | Journal horodaté des actions (saisies, périodes, cycles, suppressions, réglages, primes, sauvegardes, exports). |
+| **Réglages** | Thème clair / sombre, premier jour de la semaine, devise, **sauvegarde / restauration** SQLite, **export PDF et Excel**, **mise à jour de l'application via git** (branche `0.1` : « Vérifier les mises à jour » + fast-forward). |
 
 Les exports **PDF** et **Excel** mettent en avant le **total à payer (estimé)** et détaillent le montant **par jour**.
 

@@ -30,6 +30,12 @@ public sealed class SalarySettings
     /// <summary>Coefficient appliqué au SMIC pour obtenir le taux (1.0 = SMIC, 1.1 = SMIC + 10 %).</summary>
     public double SmicCoefficient { get; set; } = 1.0;
 
+    /// <summary>Payer les jours fériés chômés (français, hors week-end, sans saisie).</summary>
+    public bool PayPublicHolidays { get; set; }
+
+    /// <summary>Nombre d'heures rémunérées par jour férié chômé.</summary>
+    public double PublicHolidayHours { get; set; } = 7;
+
     public string Currency { get; set; } = "€";
 
     public SalarySettings Clone() => (SalarySettings)MemberwiseClone();

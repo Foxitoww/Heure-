@@ -56,7 +56,9 @@ public static class StatsService
         }
         stats.HoursByWeek = weekBuckets.Select(kv => ($"S{kv.Key}", kv.Value)).ToList();
 
-        stats.Salary = SalaryCalculator.Estimate(monthEntries, salary, primes);
+        var first = new DateOnly(year, month, 1);
+        stats.Salary = SalaryCalculator.Estimate(monthEntries, salary, primes,
+            (first, first.AddMonths(1).AddDays(-1)));
         return stats;
     }
 }
