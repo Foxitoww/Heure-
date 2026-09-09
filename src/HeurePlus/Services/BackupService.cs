@@ -1,12 +1,11 @@
 using System;
 using System.IO;
-using System.Text;
 using Microsoft.Data.Sqlite;
 using HeurePlus.Data;
 
 namespace HeurePlus.Services;
 
-/// <summary>Sauvegarde et restauration du fichier de base de données.</summary>
+/// <summary>Sauvegarde et restauration du fichier de base de données (chiffré).</summary>
 public sealed class BackupService
 {
     private readonly AppDatabase _db;
@@ -31,25 +30,14 @@ public sealed class BackupService
         if (!File.Exists(backupFile))
             throw new FileNotFoundException("Sauvegarde introuvable.", backupFile);
 
-        if (!LooksLikeSqlite(backupFile))
-            throw new InvalidDataException("Le fichier sélectionné n'est pas une base SQLite valide.");
+        // La sauvegarde est chiffrée : elle n'est exploitable qu'avec la clé de CE
+        // profil. Un fichier d'un autre profil (ou corrompu) est refusé ici plutôt
+        // que d'écraser la base par un contenu illisible.
+        if (!_db.CanUseFile(backupFile))
+            throw new InvalidDataException(
+                "Ce fichier n'est pas une sauvegarde de ce profil (ou il est illisible).");
 
         SqliteConnection.ClearAllPools();
         File.Copy(backupFile, _db.DbPath, overwrite: true);
-    }
-
-    private static bool LooksLikeSqlite(string path)
-    {
-        try
-        {
-            using var stream = File.OpenRead(path);
-            Span<byte> header = stackalloc byte[16];
-            if (stream.Read(header) < 16) return false;
-            return Encoding.ASCII.GetString(header).StartsWith("SQLite format 3", StringComparison.Ordinal);
-        }
-        catch
-        {
-            return false;
-        }
     }
 }

@@ -27,11 +27,12 @@ public sealed class ProfileEditViewModel : ObservableObject
     private readonly ProfileStore _store;
     private readonly Profile? _existing;
 
-    public ProfileEditViewModel(ProfileStore store, ProfileEditMode mode, Profile? existing)
+    public ProfileEditViewModel(ProfileStore store, ProfileEditMode mode, Profile? existing, bool allowPasswordChange = false)
     {
         _store = store;
         _existing = existing;
         Mode = mode;
+        AllowPasswordChange = allowPasswordChange;
 
         _name = existing?.Name ?? "";
         _username = existing?.Username ?? "";
@@ -98,7 +99,19 @@ public sealed class ProfileEditViewModel : ObservableObject
 
     public bool ShowPasswordFields => AlwaysAskPassword || ChangePassword;
 
+    /// <summary>Le changement de mot de passe rechiffre la base : possible seulement
+    /// pour le profil actif (base ouverte), donc depuis Réglages, pas le sélecteur.</summary>
+    public bool AllowPasswordChange { get; }
+
+    public bool CanChangePassword => Mode == ProfileEditMode.Edit && AllowPasswordChange;
+
     public bool CanDelete => Mode == ProfileEditMode.Edit;
+
+    /// <summary>Création / première protection : clé pour créer ou chiffrer la base.</summary>
+    public byte[]? DbKey { get; private set; }
+
+    /// <summary>Changement de mot de passe : le caller doit rechiffrer la base ouverte avec cette clé.</summary>
+    public byte[]? NewDbKey { get; private set; }
 
     private bool _rememberMe;
     public bool RememberMe
@@ -176,6 +189,15 @@ public sealed class ProfileEditViewModel : ObservableObject
             var (h, s) = PasswordHasher.Hash(password);
             p.PasswordHash = h;
             p.PasswordSalt = s;
+
+            byte[] dbSalt = PasswordHasher.NewDbSalt();
+            byte[] dbKey = PasswordHasher.DeriveDbKey(password, dbSalt);
+            p.DbKdfSalt = Convert.ToBase64String(dbSalt);
+
+            if (Mode == ProfileEditMode.Edit)
+                NewDbKey = dbKey;   // base déjà chiffrée et ouverte → le caller fait Rekey
+            else
+                DbKey = dbKey;      // Create : base à créer ; SetupExisting : base en clair à chiffrer
         }
 
         if (_existing is null) _store.Add(p);

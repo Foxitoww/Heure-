@@ -23,6 +23,9 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Moteur SQLite chiffrant (SQLCipher) : enregistre le fournisseur natif.
+        SQLitePCL.Batteries_V2.Init();
+
         // Licence QuestPDF (usage individuel / petite structure).
         QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
@@ -41,26 +44,43 @@ public partial class App : Application
 
     private void StartProfileFlow()
     {
-        var profile = ResolveProfile();
-        if (profile is null) { Shutdown(); return; }
+        var session = ResolveProfile();
+        if (session is null || session.Value.Profile is null) { Shutdown(); return; }
+
+        var profile = session.Value.Profile;
+        var key = session.Value.Key;
 
         _profiles.LastActiveId = profile.Id;
         profile.LastUsedUtc = DateTime.UtcNow;
         _profiles.Update(profile);
 
-        ShowMainFor(profile);
+        ShowMainFor(profile, key);
     }
 
-    private Profile? ResolveProfile()
+    /// <summary>Résout le profil à ouvrir et sa clé de base (mémorisé, ou via l'écran de sélection).</summary>
+    private (Profile? Profile, byte[] Key)? ResolveProfile()
     {
-        var remembered = _profiles.Get(_profiles.RememberedProfileId);
-        if (remembered is { HasCredentials: true }) return remembered;
+        if (_profiles.Get(_profiles.RememberedProfileId) is { HasCredentials: true } remembered
+            && _profiles.TryGetRememberedKey() is { } rememberedKey)
+        {
+            return (remembered, rememberedKey);
+        }
 
         Func<LoginViewModel, bool?> showLogin = vm => ShowModal(new LoginWindow(), vm);
         Func<ProfileEditViewModel, bool?> showEdit = vm => ShowModal(new ProfileEditWindow(), vm);
         var picker = new ProfilePickerViewModel(_profiles, showLogin, showEdit);
         ShowModal(new ProfilePickerWindow(), picker);
-        return picker.Result;
+
+        if (picker.Result is null || picker.ResultKey is null) return null;
+
+        // Profil créé avant le chiffrement : on fige le sel utilisé pour la clé.
+        if (picker.Result.DbKdfSalt is null && picker.ResultKdfSalt is not null)
+        {
+            picker.Result.DbKdfSalt = Convert.ToBase64String(picker.ResultKdfSalt);
+            _profiles.Update(picker.Result);
+        }
+
+        return (picker.Result, picker.ResultKey);
     }
 
     private bool? ShowModal(Window w, object dataContext)
@@ -71,10 +91,21 @@ public partial class App : Application
         return w.ShowDialog();
     }
 
-    private void ShowMainFor(Profile profile)
+    private void ShowMainFor(Profile profile, byte[] key)
     {
         // --- Composition (pas de conteneur DI, câblage manuel) ---
-        var database = new AppDatabase(_profiles.DbPathFor(profile.Id));
+        string dbPath = _profiles.DbPathFor(profile.Id);
+
+        // Base héritée en clair (profil « Moi » de la 0.2.0 qui vient de se voir
+        // attribuer un mot de passe) → on la chiffre avant la première ouverture.
+        if (ProfileDbSecurity.IsPlaintextDatabase(dbPath))
+            ProfileDbSecurity.EncryptInPlace(dbPath, key);
+
+        var database = new AppDatabase(dbPath, key);
+
+        // Le chiffrement est confirmé fonctionnel : on efface la copie en clair
+        // laissée par la migration multi-profils (choix « supprimer »).
+        TryDeletePlaintextBackups();
 
         var events = new AppEvents();
         var entryRepo = new DayEntryRepository(database, events);
@@ -129,7 +160,7 @@ public partial class App : Application
             new CalculatorViewModel(),
             new DashboardViewModel(entryRepo, settingsRepo, events),
             new HistoryViewModel(activityLog, events),
-            new SettingsViewModel(settingsRepo, backup, _theme, dialogs, entryRepo, activityLog, events, database, _profiles, profile, SwitchProfile, showProfileEdit));
+            new SettingsViewModel(settingsRepo, backup, _theme, dialogs, entryRepo, activityLog, events, database, _profiles, profile, key, SwitchProfile, showProfileEdit));
 
         var mainWindow = new MainWindow { DataContext = main };
         MainWindow = mainWindow;
@@ -147,7 +178,7 @@ public partial class App : Application
     {
         // « Changer de profil » doit toujours ramener à l'écran de sélection,
         // même si « rester connecté » était coché pour le profil courant.
-        _profiles.RememberedProfileId = null;
+        _profiles.ForgetRemembered();
 
         _switching = true;
         var old = _mainWindow;
@@ -155,6 +186,20 @@ public partial class App : Application
         old?.Close();
         _switching = false;
         StartProfileFlow();
+    }
+
+    /// <summary>Efface les copies de base laissées en clair sur le disque (post-chiffrement).</summary>
+    private void TryDeletePlaintextBackups()
+    {
+        try
+        {
+            string legacyBak = Path.Combine(_dataDir, "heureplus.db.premultiprofile.bak");
+            if (File.Exists(legacyBak)) File.Delete(legacyBak);
+        }
+        catch
+        {
+            // Fichier verrouillé ou déjà absent : sans conséquence.
+        }
     }
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

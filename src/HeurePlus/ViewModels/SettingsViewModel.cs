@@ -23,6 +23,7 @@ public sealed class SettingsViewModel : ObservableObject
     private readonly AppDatabase _db;
     private readonly ProfileStore _profiles;
     private readonly Profile _currentProfile;
+    private readonly byte[] _sessionKey;
     private readonly Action _switchProfile;
     private readonly Func<ProfileEditViewModel, bool?> _showProfileEdit;
     private readonly UpdateService _update = new();
@@ -40,6 +41,7 @@ public sealed class SettingsViewModel : ObservableObject
         AppDatabase db,
         ProfileStore profiles,
         Profile currentProfile,
+        byte[] sessionKey,
         Action switchProfile,
         Func<ProfileEditViewModel, bool?> showProfileEdit)
     {
@@ -53,6 +55,7 @@ public sealed class SettingsViewModel : ObservableObject
         _db = db;
         _profiles = profiles;
         _currentProfile = currentProfile;
+        _sessionKey = sessionKey;
         _switchProfile = switchProfile;
         _showProfileEdit = showProfileEdit;
 
@@ -89,7 +92,8 @@ public sealed class SettingsViewModel : ObservableObject
         get => _profiles.RememberedProfileId == _currentProfile.Id;
         set
         {
-            _profiles.RememberedProfileId = value ? _currentProfile.Id : null;
+            if (value) _profiles.RememberKey(_currentProfile.Id, _sessionKey);
+            else _profiles.ForgetRemembered();
             OnPropertyChanged();
         }
     }
@@ -98,7 +102,15 @@ public sealed class SettingsViewModel : ObservableObject
 
     public RelayCommand EditMyProfileCommand => new(_ =>
     {
-        _showProfileEdit(new ProfileEditViewModel(_profiles, ProfileEditMode.Edit, _currentProfile));
+        var vm = new ProfileEditViewModel(_profiles, ProfileEditMode.Edit, _currentProfile, allowPasswordChange: true);
+        if (_showProfileEdit(vm) == true && vm.NewDbKey is { } newKey)
+        {
+            _db.Rekey(newKey);
+            // Si ce profil était mémorisé, re-protéger la clé mise à jour.
+            if (_profiles.RememberedProfileId == _currentProfile.Id)
+                _profiles.RememberKey(_currentProfile.Id, newKey);
+            _activityLog.Log(ActivityCategory.Reglages, "Mot de passe du profil modifié");
+        }
         RaiseAll();
     });
 

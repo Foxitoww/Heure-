@@ -65,6 +65,12 @@ public sealed class ProfilePickerViewModel : ObservableObject
 
     public Profile? Result { get; private set; }
 
+    /// <summary>Clé de chiffrement de la base du profil choisi (dérivée du mot de passe).</summary>
+    public byte[]? ResultKey { get; private set; }
+
+    /// <summary>Sel de dérivation, à persister si le profil n'avait pas encore de base chiffrée.</summary>
+    public byte[]? ResultKdfSalt { get; private set; }
+
     public ObservableCollection<ProfileCardViewModel> Cards { get; } = new();
 
     public string Title => "Qui utilise Heure+ ?";
@@ -102,15 +108,20 @@ public sealed class ProfilePickerViewModel : ObservableObject
         if (!p.HasCredentials)
         {
             var ev = new ProfileEditViewModel(_store, ProfileEditMode.SetupExisting, p);
-            if (_showEdit(ev) == true) Finish(_store.Get(p.Id));
+            if (_showEdit(ev) == true)
+            {
+                if (ev.RememberMe && ev.DbKey is { } k) _store.RememberKey(p.Id, k);
+                Finish(_store.Get(p.Id), ev.DbKey);
+            }
             return;
         }
 
         var lv = new LoginViewModel(p);
         if (_showLogin(lv) == true)
         {
-            if (lv.RememberMe) _store.RememberedProfileId = p.Id;
-            Finish(p);
+            if (lv.RememberMe && lv.DbKey is { } k) _store.RememberKey(p.Id, k);
+            ResultKdfSalt = lv.DbKdfSalt;
+            Finish(p, lv.DbKey);
         }
     }
 
@@ -119,8 +130,8 @@ public sealed class ProfilePickerViewModel : ObservableObject
         var ev = new ProfileEditViewModel(_store, ProfileEditMode.Create, null);
         if (_showEdit(ev) == true && ev.SavedProfile is { } np)
         {
-            if (ev.RememberMe) _store.RememberedProfileId = np.Id;
-            Finish(np);
+            if (ev.RememberMe && ev.DbKey is { } k) _store.RememberKey(np.Id, k);
+            Finish(np, ev.DbKey);
         }
         else
         {
@@ -128,9 +139,10 @@ public sealed class ProfilePickerViewModel : ObservableObject
         }
     }
 
-    private void Finish(Profile? p)
+    private void Finish(Profile? p, byte[]? key)
     {
         Result = p;
+        ResultKey = key;
         CloseRequested?.Invoke(p is not null);
     }
 }

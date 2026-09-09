@@ -39,4 +39,21 @@ public static class PasswordHasher
             return false;
         }
     }
+
+    // ---------- Clé de chiffrement de la base (SQLCipher) ----------
+
+    private const int DbKeyIterations = 210_000; // > que pour le hash : dérivée une fois par session
+    private const int DbKeyBytes = 32;           // AES-256
+
+    /// <summary>Sel aléatoire de 16 octets pour la dérivation de clé de base.</summary>
+    public static byte[] NewDbSalt() => RandomNumberGenerator.GetBytes(SaltBytes);
+
+    /// <summary>
+    /// Dérive la clé brute AES-256 de la base à partir du mot de passe et du sel
+    /// du profil. Appelée une fois à la connexion ; la clé reste en mémoire pour
+    /// la session et est appliquée telle quelle (<c>PRAGMA key = "x'…'"</c>),
+    /// sans repasser par une KDF à chaque ouverture de connexion.
+    /// </summary>
+    public static byte[] DeriveDbKey(string password, byte[] salt) =>
+        Rfc2898DeriveBytes.Pbkdf2(password, salt, DbKeyIterations, HashAlgorithmName.SHA256, DbKeyBytes);
 }

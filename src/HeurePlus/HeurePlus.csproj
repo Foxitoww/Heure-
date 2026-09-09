@@ -11,7 +11,7 @@
     <AssemblyName>HeurePlus</AssemblyName>
     <!-- Version unique de l'application : lue par l'app (À propos / mise à jour)
          ET par l'installeur (build-installer.ps1 la passe à Inno Setup). -->
-    <Version>0.4.0</Version>
+    <Version>0.5.0</Version>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <Product>Heure+</Product>
     <Authors>Heure+</Authors>
@@ -27,8 +27,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Base de données locale SQLite (le natif e_sqlite3 est embarqué, aucune install requise) -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
+    <!-- Base de données locale chiffrée : SQLCipher (SQLite + AES-256), natif embarqué,
+         aucune install requise. Le .Core évite le bundle e_sqlite3 par défaut ;
+         bundle_e_sqlcipher fournit le moteur chiffrant. -->
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="8.0.10" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.10" />
     <!-- Export Excel (.xlsx) — 100% managé, hors ligne -->
     <PackageReference Include="ClosedXML" Version="0.104.2" />
     <!-- Export PDF — police embarquée, aucune dépendance système -->

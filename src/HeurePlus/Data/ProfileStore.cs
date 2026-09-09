@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
 using HeurePlus.Models;
 
@@ -22,6 +23,8 @@ public sealed class ProfileStore
     private sealed class Doc
     {
         public string? RememberedProfileId { get; set; }
+        /// <summary>Clé de base du profil mémorisé, protégée par DPAPI (compte Windows courant).</summary>
+        public string? RememberedKeyBlob { get; set; }
         public string? LastActiveId { get; set; }
         public List<Profile> Profiles { get; set; } = new();
     }
@@ -43,10 +46,42 @@ public sealed class ProfileStore
     public IReadOnlyList<Profile> All => _doc.Profiles;
 
     /// <summary>Profil à ouvrir sans repasser par l'écran de sélection (case « se souvenir »).</summary>
-    public string? RememberedProfileId
+    public string? RememberedProfileId => _doc.RememberedProfileId;
+
+    /// <summary>
+    /// Mémorise un profil ET sa clé de base, protégée par DPAPI : le blob n'est
+    /// déchiffrable que par ce compte Windows, sur cette machine. Copié ailleurs,
+    /// il est inutilisable.
+    /// </summary>
+    public void RememberKey(string profileId, byte[] dbKey)
     {
-        get => _doc.RememberedProfileId;
-        set { _doc.RememberedProfileId = value; Save(); }
+        _doc.RememberedProfileId = profileId;
+        byte[] blob = ProtectedData.Protect(dbKey, null, DataProtectionScope.CurrentUser);
+        _doc.RememberedKeyBlob = Convert.ToBase64String(blob);
+        Save();
+    }
+
+    /// <summary>Clé de base du profil mémorisé, ou null si absente / illisible.</summary>
+    public byte[]? TryGetRememberedKey()
+    {
+        if (string.IsNullOrEmpty(_doc.RememberedKeyBlob)) return null;
+        try
+        {
+            byte[] blob = Convert.FromBase64String(_doc.RememberedKeyBlob);
+            return ProtectedData.Unprotect(blob, null, DataProtectionScope.CurrentUser);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Oublie le profil mémorisé et efface sa clé protégée.</summary>
+    public void ForgetRemembered()
+    {
+        _doc.RememberedProfileId = null;
+        _doc.RememberedKeyBlob = null;
+        Save();
     }
 
     public string? LastActiveId
@@ -94,7 +129,11 @@ public sealed class ProfileStore
 
         _doc.Profiles.RemoveAll(p => p.Id == id);
         if (_doc.LastActiveId == id) _doc.LastActiveId = null;
-        if (_doc.RememberedProfileId == id) _doc.RememberedProfileId = null;
+        if (_doc.RememberedProfileId == id)
+        {
+            _doc.RememberedProfileId = null;
+            _doc.RememberedKeyBlob = null;
+        }
 
         try
         {

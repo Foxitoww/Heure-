@@ -50,6 +50,12 @@ public sealed class LoginViewModel : ObservableObject
 
     public RelayCommand CancelCommand { get; }
 
+    /// <summary>Clé de chiffrement de la base, dérivée du mot de passe après connexion réussie.</summary>
+    public byte[]? DbKey { get; private set; }
+
+    /// <summary>Sel utilisé pour <see cref="DbKey"/> (à persister si le profil n'était pas encore chiffré).</summary>
+    public byte[]? DbKdfSalt { get; private set; }
+
     public bool TryLogin(string password)
     {
         if (!string.Equals(Username?.Trim(), Profile.Username, StringComparison.OrdinalIgnoreCase))
@@ -63,6 +69,11 @@ public sealed class LoginViewModel : ObservableObject
             Error = "Mot de passe incorrect.";
             return false;
         }
+
+        DbKdfSalt = Profile.DbKdfSalt is not null
+            ? Convert.FromBase64String(Profile.DbKdfSalt)
+            : PasswordHasher.NewDbSalt();
+        DbKey = PasswordHasher.DeriveDbKey(password ?? "", DbKdfSalt);
 
         CloseRequested?.Invoke(true);
         return true;

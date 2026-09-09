@@ -34,6 +34,17 @@ public sealed class Profile
     public string? PasswordSalt { get; set; }
 
     /// <summary>
+    /// Sel (base64, 16 octets) pour dériver la clé de chiffrement SQLCipher de la
+    /// base à partir du mot de passe. Présent ⇒ la base du profil est chiffrée.
+    /// Distinct de <see cref="PasswordSalt"/> : la clé de base et le hash de
+    /// vérification ne doivent jamais être la même valeur.
+    /// </summary>
+    public string? DbKdfSalt { get; set; }
+
+    [JsonIgnore]
+    public bool IsEncrypted => !string.IsNullOrEmpty(DbKdfSalt);
+
+    /// <summary>
     /// Faux uniquement pour un profil hérité de la version mono-utilisateur,
     /// tant que la personne ne s'est pas défini d'identifiants au 1er lancement.
     /// </summary>
